@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contributing Code: Prototype Challenge</title>
+    <!-- Favicon updated for better cross-browser compatibility and centering (using Gear emoji) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='90' x='50' text-anchor='middle' font-size='90'>⚙️</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Hacker Theme (Dark Grey, Neon Green, Monospace) -->
+    <style>
+        /* Import Monospace Font for Terminal Aesthetic */
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+        body { font-family: 'Space Mono', monospace; }
+
+        /* Neon Green Accent Color: Green-400 (#34d399) */
+        .nav-link {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .nav-link.active {
+            color: #34d399; 
+            border-bottom-color: #34d399;
+            /* Subtle neon glow for active tab */
+            text-shadow: 0 0 5px rgba(52, 211, 153, 0.5); 
+        }
+        .rubric-cell {
+            transition: background-color 0.3s ease;
+        }
+        /* Highlight color: Dark green on dark gray background */
+        .highlight {
+            background-color: #064e3b !important; /* Darker Green-900 */
+            color: #a7f3d0 !important; /* Lighter Green-200 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-300">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8 border-b border-green-600 pb-4">
+            <h1 class="text-4xl md:text-5xl font-bold text-green-400 uppercase tracking-wider">Contributing Code: Prototype Challenge</h1>
+            <p class="text-lg text-gray-500 mt-2">[[ ACCESSING PROJECT MANIFEST: WEEKS 1 to 9 ]]</p>
+        </header>
+
+        <nav class="sticky top-0 bg-gray-900 z-10 mb-8 border-b border-gray-700">
+            <ul class="flex justify-center flex-wrap -mb-px">
+                <li class="mr-2">
+                    <a onclick="showSection('roadmap')" class="nav-link active inline-block p-4 border-b-2 border-transparent hover:text-green-500 hover:border-gray-500">LOG: Roadmap</a>
+                </li>
+                <li class="mr-2">
+                    <a onclick="showSection('challenge')" class="nav-link inline-block p-4 border-b-2 border-transparent hover:text-green-500 hover:border-gray-500">INIT: Challenge</a>
+                </li>
+                <li class="mr-2">
+                    <a onclick="showSection('checklist')" class="nav-link inline-block p-4 border-b-2 border-transparent hover:text-green-500 hover:border-gray-500">TASK: Checklist</a>
+                </li>
+                <li class="mr-2">
+                    <a onclick="showSection('deliverables')" class="nav-link inline-block p-4 border-b-2 border-transparent hover:text-green-500 hover:border-gray-500">SUBMIT: Deliverables</a>
+                </li>
+                <li class="mr-2">
+                    <a onclick="showSection('submission')" class="nav-link inline-block p-4 border-b-2 border-transparent hover:text-green-500 hover:border-gray-500">FINALIZE: Submission</a>
+                </li>
+                <li>
+                    <a onclick="showSection('rubric')" class="nav-link inline-block p-4 border-b-2 border-transparent hover:text-green-500 hover:border-gray-500">ANALYZE: Rubric</a>
+                </li>
+            </ul>
+        </nav>
+
+        <main>
+            <section id="roadmap" class="space-y-8">
+                <div class="bg-gray-800 p-6 shadow-xl border border-green-600/30">
+                    <h2 class="text-3xl font-bold mb-4 text-green-400">1. LOG: Course Roadmap (9 Weeks)</h2>
+                    <p class="text-gray-400 leading-relaxed">
+                        This section shows the entire 9-week journey, outlining the core coding concept and the practical project you complete each week. Use this to see how your skills progress from simple computational thinking to complex web interactivity.
+                    </p>
+                     <div class="mt-4 pt-4 border-t border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <strong class="text-green-400 mb-2 sm:mb-0">[[ SYSTEM NOTIFICATION: ACCESS WEEKLY TASKS $\to$ ]]</strong>
+                        <a href="https://codeavengers.com/login" target="_blank" class="inline-block px-4 py-2 text-sm text-green-400 border border-green-400 bg-green-900/30 hover:bg-green-800/50 transition-colors tracking-widest uppercase">
+                            &gt; LAUNCH_TERMINAL_LOGIN
+                        </a>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 p-6 shadow-xl border border-gray-700 overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-400">
+                        <thead class="text-xs text-green-400 uppercase bg-gray-900 border-b border-green-600">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Week</th>
+                                <th scope="col" class="px-6 py-3">Core Topic</th>
+                                <th scope="col" class="px-6 py-3">Code Avengers Focus (Specific Course Title)</th>
+                                <th scope="col" class="px-6 py-3">Weekly Project / Outcome</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-gray-800 border-b border-gray-700 hover:bg-gray-700">
+                                <td class="px-6 py-4 font-bold text-gray-300">01</td>
+                                <td class="px-6 py-4">Introduction to Computational Thinking</td>
+                                <td class="px-6 py-4">**Professor Photon's Color Conundrum (DATA REPRESENTATION 400 JR)**</td>
+                                <td class="px-6 py-4">Visual puzzle solver using sequencing and loops.</td>
+                            </tr>
+                            <tr class="bg-gray-800 border-b border-gray-700 hover:bg-gray-700">
+                                <td class="px-6 py-4 font-bold text-gray-300">02</td>
+                                <td class="px-6 py-4">Python Fundamentals: Data & Input</td>
+                                <td class="px-6 py-4">**Introduction to Python (PYTHON 0 PRO)**</td>
+                                <td class="px-6 py-4">Simple "Age in Dog Years" or "Unit Converter" calculator.</td>
+                            </tr>
+                            <tr class="bg-gray-800 border-b border-gray-700 hover:bg-gray-700">
+                                <td class="px-6 py-4 font-bold text-gray-300">03</td>
+                                <td class="px-6 py-4">Python: Conditionals & Iteration</td>
+                                <td class="px-6 py-4">**Introduction to Python (PYTHON 0 PRO) - Focus on Control Flow**</td>
+                                <td class="px-6 py-4">Text-based "Choose Your Own Adventure" game.</td>
+                            </tr>
+                            <tr class="bg-gray-800 border-b border-gray-700 hover:bg-gray-700">
+                                <td class="px-6 py-4 font-bold text-gray-300">04</td>
+                                <td class="px-6 py-4">Web Development: Structure</td>
+                                <td class="px-6 py-4">**Digital Postcard (HTML/CSS 101 PRO)**</td>
+                                <td class="px-6 py-4">Design a personal profile webpage with headings, lists, links, and embedded images.</td>
+                            </tr>
+                            <tr class="bg-gray-800 border-b border-gray-700 hover:bg-gray-700">
+                                <td class="px-6 py-4 font-bold text-gray-300">05</td>
+                                <td class="px-6 py-4">Web Development: Styling</td>
+                                <td class="px-6 py-4">**Digital Postcard (HTML/CSS 101 PRO) - CSS Layout**</td>
+                                <td class="px-6 py-4">Style the profile page to be aesthetically pleasing and responsive.</td>
+                            </tr>
+                            <tr class="bg-gray-800 border-b border-gray-700 hover:bg-gray-700">
+                                <td class="px-6 py-4 font-bold text-gray-300">06</td>
+                                <td class="px-6 py-4">Introduction to JavaScript</td>
+                                <td class="px-6 py-4">**Introduction to JavaScript (JAVASCRIPT 0 PRO)**</td>
+                                <td class="px-6 py-4">Create a simple "Magic 8-Ball" webpage using button clicks.</td>
+                            </tr>
+                            <tr class="bg-gray-800 border-b border-gray-700 hover:bg-gray-700">
+                                <td class="px-6 py-4 font-bold text-gray-300">07</td>
+                                <td class="px-6 py-4">JavaScript: DOM Interaction</td>
+                                <td class="px-6 py-4">**Drawing Flags (JAVASCRIPT 103 PRO)**</td>
+                                <td class="px-6 py-4">Build a basic "To-Do List" app with add and mark-as-complete functions.</td>
+                            </tr>
+                            <tr class="bg-gray-800 border-b border-gray-700 hover:bg-gray-700">
+                                <td class="px-6 py-4 font-bold text-green-400">08</td>
+                                <td class="px-6 py-4 font-bold text-green-400">Digital Design & Planning</td>
+                                <td class="px-6 py-4 font-bold text-green-400">Game/App Design: User Experience (UX) and Planning</td>
+                                <td class="px-6 py-4 font-bold text-green-400">Design wireframe and functional prototype for final project.</td>
+                            </tr>
+                            <tr class="bg-gray-800 hover:bg-gray-700">
+                                <td class="px-6 py-4 font-bold text-gray-300">09</td>
+                                <td class="px-6 py-4 font-bold text-green-400">Project Showcase & Future Skills</td>
+                                <td class="px-6 py-4 font-bold text-green-400">Digital Citizenship & Portfolio Building</td>
+                                <td class="px-6 py-4 font-bold text-green-400">Final Presentation of Prototype and reflection.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <section id="challenge" class="hidden space-y-8">
+                <div class="bg-gray-800 p-6 shadow-xl border border-green-600/30">
+                    <h2 class="text-3xl font-bold mb-4 text-green-400">2. INIT: Project Goal</h2>
+                    <p class="text-gray-400 leading-relaxed">
+                        Welcome to your final project! The goal is to use all the skills you've learned in Python, HTML, CSS, and JavaScript to create a working prototype of a simple digital app or mini-game. This is your chance to be creative and build something from scratch. This section outlines the main choices you have for your project.
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-gray-800 p-6 shadow-xl border border-gray-700 hover:border-green-400 transition-colors">
+                        <h3 class="text-2xl font-bold mb-3 text-green-400">Option 1: Mini-Game Prototype 👾</h3>
+                        <p class="text-gray-400">Build a simple, fun, web-based game. Think about what makes a game enjoyable and try to create a single, complete interaction.</p>
+                        <p class="font-semibold mt-4 text-gray-500">Examples:</p>
+                        <ul class="list-disc list-inside mt-2 text-gray-500">
+                            <li>A number guessing game</li>
+                            <li>A simple memory card flipper</li>
+                            <li>A single-screen quiz with instant feedback</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-800 p-6 shadow-xl border border-gray-700 hover:border-green-400 transition-colors">
+                        <h3 class="text-2xl font-bold mb-3 text-green-400">Option 2: Interactive Application 💾</h3>
+                        <p class="text-gray-400">Create a basic utility application that helps a user accomplish a task. Focus on making it useful and easy to understand.</p>
+                        <p class="font-semibold mt-4 text-gray-500">Examples:</p>
+                        <ul class="list-disc list-inside mt-2 text-gray-500">
+                            <li>An enhanced calculator with extra functions</li>
+                            <li>A simple data visualizer</li>
+                            <li>An expanded to-do list with a delete function</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="checklist" class="hidden space-y-8">
+                <div class="bg-gray-800 p-6 shadow-xl border border-green-600/30">
+                    <h2 class="text-3xl font-bold mb-4 text-green-400">3. TASK: The Technical Checklist</h2>
+                    <p class="text-gray-400 leading-relaxed">
+                        To build a successful project, you need to include some key technical features. This section provides an interactive checklist of all the mandatory specifications. Use this to track your progress and make sure you haven't missed anything important. Your goal is to be able to check every box!
+                    </p>
+                </div>
+                <div class="bg-gray-800 p-6 shadow-xl border border-gray-700">
+                    <div class="space-y-4">
+                        <label class="flex items-center p-4 border border-gray-700 hover:bg-gray-700 cursor-pointer">
+                            <input type="checkbox" class="h-5 w-5 rounded-none border-green-500 bg-gray-900 text-green-400 focus:ring-green-500">
+                            <span class="ml-4">
+                                <strong class="font-bold text-green-400">User Input:</strong> Accept and process input from the user (e.g., button click, text entry).
+                            </span>
+                        </label>
+                         <label class="flex items-center p-4 border border-gray-700 hover:bg-gray-700 cursor-pointer">
+                            <input type="checkbox" class="h-5 w-5 rounded-none border-green-500 bg-gray-900 text-green-400 focus:ring-green-500">
+                            <span class="ml-4">
+                                <strong class="font-bold text-green-400">Conditional Logic:</strong> Use `if/else` statements to make decisions in your code.
+                            </span>
+                        </label>
+                         <label class="flex items-center p-4 border border-gray-700 hover:bg-gray-700 cursor-pointer">
+                            <input type="checkbox" class="h-5 w-5 rounded-none border-green-500 bg-gray-900 text-green-400 focus:ring-green-500">
+                            <span class="ml-4">
+                                <strong class="font-bold text-green-400">Iteration/Repetition:</strong> Use a loop (`for` or `while`) to manage repeated tasks.
+                            </span>
+                        </label>
+                         <label class="flex items-center p-4 border border-gray-700 hover:bg-gray-700 cursor-pointer">
+                            <input type="checkbox" class="h-5 w-5 rounded-none border-green-500 bg-gray-900 text-green-400 focus:ring-green-500">
+                            <span class="ml-4">
+                                <strong class="font-bold text-green-400">Structure & Content:</strong> Use appropriate HTML elements to structure your content.
+                            </span>
+                        </label>
+                         <label class="flex items-center p-4 border border-gray-700 hover:bg-gray-700 cursor-pointer">
+                            <input type="checkbox" class="h-5 w-5 rounded-none border-green-500 bg-gray-900 text-green-400 focus:ring-green-500">
+                            <span class="ml-4">
+                                <strong class="font-bold text-green-400">Visual Styling:</strong> Apply custom CSS for colours, fonts, and layout. Make it responsive!
+                            </span>
+                        </label>
+                         <label class="flex items-center p-4 border border-gray-700 hover:bg-gray-700 cursor-pointer">
+                            <input type="checkbox" class="h-5 w-5 rounded-none border-green-500 bg-gray-900 text-green-400 focus:ring-green-500">
+                            <span class="ml-4">
+                                <strong class="font-bold text-green-400">DOM Manipulation:</strong> Use JavaScript to change content or styles on the page after it loads.
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="deliverables" class="hidden space-y-8">
+                <div class="bg-gray-800 p-6 shadow-xl border border-green-600/30">
+                    <h2 class="text-3xl font-bold mb-4 text-green-400">4. SUBMIT: The Deliverables</h2>
+                     <p class="text-gray-400 leading-relaxed">
+                        Your final mark is based on three key components. This section breaks down exactly what you need to plan, build, and present. Pay close attention to the weighting for each part, as planning and presenting are just as important as the code itself.
+                    </p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-8 text-center">
+                    <div class="bg-gray-800 p-6 shadow-xl border border-gray-700">
+                        <div class="text-3xl font-bold text-green-400 mb-2">20%</div>
+                        <h3 class="text-xl font-bold mb-3 text-gray-300">A. Planning & Design</h3>
+                        <ul class="text-left list-disc list-inside text-gray-500">
+                            <li>Wireframe of your layout</li>
+                            <li>Algorithm or Flowchart of your logic</li>
+                            <li>Feature list (mandatory & extensions)</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-800 p-6 shadow-xl border border-gray-700">
+                        <div class="text-3xl font-bold text-green-400 mb-2">70%</div>
+                        <h3 class="text-xl font-bold mb-3 text-gray-300">B. Final Working Code</h3>
+                        <ul class="text-left list-disc list-inside text-gray-500">
+                            <li>The complete, functional prototype</li>
+                            <li>Clean, structured, and commented code</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-800 p-6 shadow-xl border border-gray-700">
+                         <div class="text-3xl font-bold text-green-400 mb-2">10%</div>
+                        <h3 class="text-xl font-bold mb-3 text-gray-300">C. Presentation & Reflection</h3>
+                         <ul class="text-left list-disc list-inside text-gray-500">
+                            <li>A 3-5 minute demonstration</li>
+                            <li>Explanation of key code concepts</li>
+                            <li>Reflection on your process</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- NEW SUBMISSION SECTION -->
+            <section id="submission" class="hidden space-y-8">
+                <div class="bg-gray-800 p-6 shadow-xl border border-green-600/30">
+                    <h2 class="text-3xl font-bold mb-4 text-green-400">5. FINALIZE: Assessment Submission</h2>
+                    <p class="text-gray-400 leading-relaxed">
+                        When your code is polished, your planning is complete, and you are ready for the final presentation, use this terminal interface to submit your final project link.
+                    </p>
+                </div>
+
+                <div class="bg-gray-800 p-6 shadow-xl border border-gray-700">
+                    <h3 class="text-2xl font-bold mb-4 text-gray-300">[[ SYSTEM: UPLOAD PROTOCOL INITIATED ]]</h3>
+                    <form onsubmit="handleSubmission(event)">
+                        <div class="mb-6">
+                            <label for="projectName" class="block text-sm font-medium text-green-400 mb-2">Project Name:</label>
+                            <input type="text" id="projectName" name="projectName" required class="w-full p-3 bg-gray-900 border border-green-600/50 text-green-400 focus:ring-green-500 focus:border-green-500" placeholder="e.g., The Ultimate Calculator v1.0">
+                        </div>
+
+                        <div class="mb-6">
+                            <label for="projectLink" class="block text-sm font-medium text-green-400 mb-2">Final Project Link (URL):</label>
+                            <input type="url" id="projectLink" name="projectLink" required class="w-full p-3 bg-gray-900 border border-green-600/50 text-green-400 focus:ring-green-500 focus:border-green-500" placeholder="https://my-awesome-project.codepen.io/...">
+                            <p class="text-xs text-gray-500 mt-1">Provide the live link to your working prototype.</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="planningDoc" class="block text-sm font-medium text-green-400 mb-2">Planning Document Link (Optional):</label>
+                            <input type="url" id="planningDoc" name="planningDoc" class="w-full p-3 bg-gray-900 border border-green-600/50 text-green-400 focus:ring-green-500 focus:border-green-500" placeholder="https://docs.google.com/d/...">
+                            <p class="text-xs text-gray-500 mt-1">Link to your wireframe and algorithm/flowchart.</p>
+                        </div>
+
+                        <button type="submit" class="w-full md:w-auto px-6 py-3 text-lg font-bold text-gray-900 bg-green-400 hover:bg-green-300 transition-colors shadow-lg shadow-green-600/50">
+                            INITIATE SUBMIT $\gg$
+                        </button>
+                    </form>
+
+                    <div id="submission-message" class="mt-6 p-4 border border-yellow-500 bg-yellow-900/30 text-yellow-400 hidden">
+                        <!-- Submission message will appear here -->
+                    </div>
+                </div>
+            </section>
+            <!-- END NEW SUBMISSION SECTION -->
+
+
+            <section id="rubric" class="hidden space-y-8">
+                <div class="bg-gray-800 p-6 shadow-xl border border-green-600/30">
+                    <h2 class="text-3xl font-bold mb-4 text-green-400">6. ANALYZE: The Rubric Explorer</h2>
+                    <p class="text-gray-400 leading-relaxed">
+                        Understanding how you'll be marked is the key to success. This interactive rubric explorer helps you break down the assessment criteria. Click on a **criterion button** (like "Logic & Functionality") to highlight that entire row, or click on a **SOLO Level button** (like "Relational") to highlight that column. This lets you focus on exactly what you need to do to reach the next level.
+                    </p>
+                </div>
+
+                <div class="bg-gray-800 p-6 shadow-xl border border-gray-700">
+                    <div class="mb-4">
+                        <h3 class="font-bold mb-2 text-green-400">Filter by Criterion:</h3>
+                        <div class="flex flex-wrap gap-2">
+                             <button onclick="highlightRubric('criterion', 0)" class="bg-green-600 text-gray-900 px-3 py-1 rounded-none font-bold hover:bg-green-400 transition-colors text-sm border border-green-600">Logic & Functionality</button>
+                            <button onclick="highlightRubric('criterion', 1)" class="bg-green-600 text-gray-900 px-3 py-1 rounded-none font-bold hover:bg-green-400 transition-colors text-sm border border-green-600">Code Structure</button>
+                            <button onclick="highlightRubric('criterion', 2)" class="bg-green-600 text-gray-900 px-3 py-1 rounded-none font-bold hover:bg-green-400 transition-colors text-sm border border-green-600">Design & UX</button>
+                            <button onclick="highlightRubric('criterion', 3)" class="bg-green-600 text-gray-900 px-3 py-1 rounded-none font-bold hover:bg-green-400 transition-colors text-sm border border-green-600">Presentation & Planning</button>
+                        </div>
+                    </div>
+                     <div class="mb-6">
+                        <h3 class="font-bold mb-2 text-green-400">Filter by SOLO Level:</h3>
+                        <div class="flex flex-wrap gap-2">
+                             <button onclick="highlightRubric('level', 1)" class="bg-gray-700 text-green-400 px-3 py-1 rounded-none hover:bg-gray-600 transition-colors text-sm border border-green-400">Unistructural</button>
+                             <button onclick="highlightRubric('level', 2)" class="bg-gray-700 text-green-400 px-3 py-1 rounded-none hover:bg-gray-600 transition-colors text-sm border border-green-400">Multistructural</button>
+                             <button onclick="highlightRubric('level', 3)" class="bg-gray-700 text-green-400 px-3 py-1 rounded-none hover:bg-gray-600 transition-colors text-sm border border-green-400">Relational</button>
+                             <button onclick="highlightRubric('level', 4)" class="bg-gray-700 text-green-400 px-3 py-1 rounded-none hover:bg-gray-600 transition-colors text-sm border border-green-400">Extended Abstract</button>
+                        </div>
+                    </div>
+                    <button onclick="highlightRubric('reset', null)" class="bg-gray-700 text-gray-400 px-4 py-2 rounded-none hover:bg-gray-600 transition-colors mb-6 border border-gray-600">CLEAR [X]</button>
+
+                    <div class="overflow-x-auto">
+                        <table id="rubric-table" class="w-full border-collapse border border-gray-700">
+                            <thead>
+                                <tr class="bg-gray-700 text-green-400 border border-green-600">
+                                    <th class="p-3 font-bold text-left border border-gray-700">Criterion</th>
+                                    <th class="p-3 font-bold text-left border border-gray-700">Unistructural (≈ Lvl 3)</th>
+                                    <th class="p-3 font-bold text-left border border-gray-700">Multistructural (≈ Lvl 3-4)</th>
+                                    <th class="p-3 font-bold text-left border border-gray-700">Relational (≈ Lvl 4)</th>
+                                    <th class="p-3 font-bold text-left border border-gray-700">Extended Abstract (≈ Lvl 4+)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="rubric-row">
+                                    <td class="p-3 border border-gray-700 font-semibold rubric-cell text-gray-300">Logic & Functionality (40%)</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The project contains significant errors; only one code element works in isolation.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">Meets several individual requirements but the parts are disconnected, and the program is buggy or incomplete.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The program meets all mandatory specs, runs smoothly, and demonstrates a clear, logical connection between all code components.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">Meets all Relational requirements AND includes innovative, non-required features that generalize the solution.</td>
+                                </tr>
+                                <tr class="rubric-row">
+                                    <td class="p-3 border border-gray-700 font-semibold rubric-cell text-gray-300">Code Structure & Readability (30%)</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">Code is copied with minimal understanding; structure is random or nonexistent.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">Code shows sequential attempts at using different structures; commenting is inconsistent.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">Code is logically organised, consistently formatted, and uses meaningful variable/function names. The structure is evident, and key logic is clearly documented with effective comments.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">Code is modular, highly efficient, and uses best practices (e.g., clean separation of concerns).</td>
+                                </tr>
+                                 <tr class="rubric-row">
+                                    <td class="p-3 border border-gray-700 rubric-cell font-semibold text-gray-300">Design & User Experience (UX) (20%)</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The interface is difficult to use, and only basic, inherent styling is present (e.g., default browser look). No design planning is evident.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The design uses multiple style rules (e.g., colour, font, images) to meet the brief, but the aesthetic is inconsistent, and responsiveness is not handled, making it functional only on one screen size.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The design is polished, aesthetically pleasing, and fully functional. It is responsive, easy to navigate, and clearly shows a relationship between the planning stage and the final outcome.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">Critically analyzes UX best practices and implements features that anticipate user needs (e.g., smooth transitions, custom validation/error feedback), demonstrating an advanced understanding of the user-product relationship.</td>
+                                </tr>
+                                <tr class="rubric-row">
+                                    <td class="p-3 border border-gray-700 rubric-cell font-semibold text-gray-300">Presentation & Planning (10%)</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The student can state what they did (e.g., "I made a webpage") but cannot name the tools or explain any steps of the process.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The student presents the final outcome and describes multiple steps they completed (e.g., "I added a loop and then I styled the text") but struggles to explain the relationships between these steps.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The student clearly presents the outcome, explains the relationship between the planning documentation (wireframe) and the final code, and reflects on the main challenges encountered.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The student critically evaluates the design process, generalizes learned concepts to solve broader problems, and suggests clear, reasoned future iterations or applications for the technology used.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Updated array to include the new 'submission' section
+        const sections = ['roadmap', 'challenge', 'checklist', 'deliverables', 'submission', 'rubric'];
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        function showSection(sectionId) {
+            sections.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(sectionId).classList.remove('hidden');
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('onclick').includes(sectionId)) {
+                    link.classList.add('active');
+                }
+            });
+        }
+        
+        // Initialize to show the roadmap section first
+        showSection('roadmap');
+
+        const rubricCells = document.querySelectorAll('.rubric-cell');
+        const rubricRows = document.querySelectorAll('.rubric-row');
+
+        function highlightRubric(type, index) {
+            rubricCells.forEach(cell => cell.classList.remove('highlight'));
+
+            if (type === 'criterion') {
+                // index + 1 because the 0th element is the title (non-cell)
+                const cellsInRow = rubricRows[index].querySelectorAll('.rubric-cell');
+                cellsInRow.forEach(cell => cell.classList.add('highlight'));
+            } else if (type === 'level') {
+                // The column index needs to be offset by 1 because the first column is the criterion name
+                rubricRows.forEach(row => {
+                    // index 1 corresponds to Unistructural, index 2 to Multistructural, etc.
+                    const cell = row.children[index]; 
+                    if (cell) {
+                        cell.classList.add('highlight');
+                    }
+                });
+            }
+        }
+        
+        function handleSubmission(event) {
+            event.preventDefault();
+            const messageDiv = document.getElementById('submission-message');
+            const projectName = document.getElementById('projectName').value;
+
+            // Display a mock success message
+            messageDiv.innerHTML = `
+                <p class="font-bold">[[ ACKNOWLEDGEMENT: SUCCESS ]]</p>
+                <p>Project "<span class="text-white">${projectName}</span>" received for processing.</p>
+                <p class="text-xs mt-1">Please ensure you save all links and prepare for your presentation slot.</p>
+            `;
+            messageDiv.classList.remove('hidden');
+
+            // Optional: Reset form after a small delay
+            setTimeout(() => {
+                 document.querySelector('form').reset();
+            }, 3000);
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contributing Code: Prototype Challenge</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='90' x='50' text-anchor='middle' font-size='90'>⚙️</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Import Monospace Font for Terminal Aesthetic */
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+        body { font-family: 'Space Mono', monospace; }
+
+        /* Amber Accent Color: Amber-600 (#FFB300) */
+        .text-amber-hacker { color: #FFB300; }
+        .nav-link {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .nav-link.active {
+            color: #FFB300; /* New Accent Color */
+            border-bottom-color: #FFB300;
+            /* Subtle amber glow for active tab */
+            text-shadow: 0 0 5px rgba(255, 179, 0, 0.5); 
+        }
+        .rubric-cell {
+            transition: background-color 0.3s ease;
+        }
+        /* Highlight color: Dark Amber on dark gray background */
+        .highlight {
+            background-color: #795548 !important; /* Dark Brown/Amber base */
+            color: #ffe082 !important; /* Lighter Amber */
+        }
+        
+        /* --- CUSTOM CHECKBOX STYLE (UPDATED TO USE AMBER 'X') --- */
+        input[type="checkbox"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-color: #101010; /* Darker than gray-900 */
+            border: 2px solid #FFB300; /* Amber Border */
+            width: 1.25rem;
+            height: 1.25rem;
+            cursor: pointer;
+            position: relative;
+            top: 2px;
+            /* Remove Tailwind's default rounded styles if any creep in */
+            border-radius: 0; 
+        }
+        input[type="checkbox"]:checked {
+            background-color: #101010; /* Keep background dark */
+            border-color: #FFB300; 
+            box-shadow: 0 0 8px rgba(255, 179, 0, 0.7); /* Subtle Amber glow */
+        }
+        input[type="checkbox"]:checked::after {
+            /* Changed content from '✓' to 'X' */
+            content: 'X'; 
+            color: #FFB300; /* Amber 'X' text for contrast on dark background */
+            position: absolute;
+            top: -2px; /* Adjusted position for better centering of the 'X' */
+            left: 2px;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        /* --- END CUSTOM CHECKBOX STYLE --- */
+</style>
+<style>
+    /* Ensure overlay is always on top and body is hidden when needed */
+    body.overflow-hidden { overflow: hidden !important; }
+    #quiz-overlay { z-index: 9999 !important; }
+</style>
+</head>
+<body class="bg-black text-amber-hacker" style="font-family:'Space Mono',monospace;background:#101010;">
+
+    <div id="boot-sequence" class="fixed inset-0 bg-black z-[99999] flex flex-col items-center justify-center p-8" style="font-family:'Space Mono',monospace;">
+        <pre id="boot-text" class="text-amber-hacker text-sm md:text-base whitespace-pre-wrap"></pre>
+        <div class="mt-8 text-amber-500 tracking-widest text-lg">
+            [ LOADING... PLEASE WAIT ]
+        </div>
+    </div>
+
+    <!-- Admin & Teacher Buttons/Modals - Outside main-app so always visible -->
+    <button id="admin-link" class="fixed bottom-6 right-6 px-5 py-3 bg-black/90 border-2 border-amber-hacker text-amber-hacker font-mono text-base rounded-full shadow-2xl hover:bg-amber-900/60 hover:text-amber-200 transition-colors tracking-widest z-[99999]" style="text-shadow:0 0 12px #FFB300,0 0 2px #FFB300;box-shadow:0 0 24px #FFB300,0 0 4px #FFB300;letter-spacing:2px;display:flex;align-items:center;gap:0.7em;">
+        <span style="font-size:1.5em;">&#x25B6;</span>
+        <span style="font-family:'Space Mono',monospace;">ADMIN TERMINAL</span>
+    </button>
+
+    <button id="teacher-link" class="fixed bottom-6 left-6 px-5 py-3 bg-black/90 border-2 border-amber-hacker text-amber-hacker font-mono text-base rounded-full shadow-2xl hover:bg-amber-900/60 hover:text-amber-200 transition-colors tracking-widest z-[99999]" style="text-shadow:0 0 12px #FFB300,0 0 2px #FFB300;box-shadow:0 0 24px #FFB300,0 0 4px #FFB300;letter-spacing:2px;display:flex;align-items:center;gap:0.7em;">
+        <span style="font-size:1.5em;">🏫</span>
+        <span style="font-family:'Space Mono',monospace;">TEACHER PORTAL</span>
+    </button>
+
+    <div id="admin-modal" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 hidden">
+        <div class="relative bg-gray-900 border-2 border-amber-hacker rounded-xl shadow-2xl p-8 w-full max-w-2xl mx-4" style="box-shadow:0 0 40px #FFB30077,0 0 8px #FFB300; font-family:'Space Mono',monospace;">
+            <button id="close-admin-modal" class="absolute top-3 right-4 text-amber-hacker hover:text-amber-200 text-2xl font-bold" title="Close" style="text-shadow:0 0 8px #FFB300;">&times;</button>
+            <div class="mb-6 flex items-center gap-2">
+                <span class="text-amber-hacker text-2xl">&#x25B6;</span>
+                <span class="text-amber-hacker text-xl font-bold tracking-widest">ADMIN TERMINAL</span>
+            </div>
+            <div id="admin-modal-content" class="text-amber-300 text-sm overflow-y-auto max-h-[60vh] font-mono">
+                <div class="text-amber-hacker">Loading quiz results...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="teacher-modal" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 hidden">
+        <div class="relative bg-gray-900 border-2 border-amber-hacker rounded-xl shadow-2xl p-8 w-full max-w-2xl mx-4" style="box-shadow:0 0 40px #FFB30077,0 0 8px #FFB300; font-family:'Space Mono',monospace;">
+            <button id="close-teacher-modal" class="absolute top-3 right-4 text-amber-hacker hover:text-amber-200 text-2xl font-bold" title="Close" style="text-shadow:0 0 8px #FFB300;">&times;</button>
+            <div id="teacher-login-area">
+                <div class="mb-6 flex items-center gap-2">
+                    <span class="text-amber-hacker text-2xl">🏫</span>
+                    <span class="text-amber-hacker text-xl font-bold tracking-widest">TEACHER PORTAL</span>
+                </div>
+                <div class="text-amber-300 mb-4">Enter teacher password to access resources:</div>
+                <input id="teacher-password" type="password" placeholder="Enter password" class="w-full p-3 bg-gray-800 border border-amber-600/50 text-amber-hacker rounded mb-4 focus:outline-none focus:border-amber-400" style="color: #FFB300;">
+                <button id="teacher-login-btn" class="w-full px-4 py-2 bg-amber-hacker text-gray-900 font-bold rounded hover:bg-amber-500 transition-colors">Login</button>
+                <div id="teacher-login-error" class="text-red-400 mt-2"></div>
+            </div>
+            <div id="teacher-content-area" class="hidden">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-amber-hacker text-2xl">🏫</span>
+                    <span class="text-amber-hacker text-xl font-bold tracking-widest">TEACHER RESOURCES</span>
+                </div>
+                <button id="teacher-logout-btn" class="mb-4 px-4 py-2 bg-amber-hacker text-gray-900 font-bold rounded hover:bg-amber-500 transition-colors">Logout</button>
+                
+                <div class="text-amber-300 space-y-4">
+                    <div class="border border-amber-600/30 p-4 rounded">
+                        <h3 class="text-amber-hacker font-bold mb-2">⏭️ Bypass Pretest</h3>
+                        <p class="text-sm text-amber-200 mb-3">Skip the pretest and go directly to the course:</p>
+                        <button id="bypass-btn" class="w-full px-3 py-2 bg-amber-hacker text-gray-900 font-bold rounded hover:bg-amber-500 transition-colors text-sm">Bypass Pretest</button>
+                        <div id="bypass-message" class="text-green-400 text-sm mt-2"></div>
+                    </div>
+                    
+                    <div class="border border-amber-600/30 p-4 rounded">
+                        <h3 class="text-amber-hacker font-bold mb-2">📚 Course Materials</h3>
+                        <ul class="text-sm space-y-1 text-amber-200">
+                            <li>• <a href="https://docs.google.com/document/d/1n7epwShkiWIEGmVCP9-lbs6wyPy8CjKP8Rv9lbsmg5k/edit?tab=t.0" target="_blank" rel="noopener noreferrer" class="hover:underline">Google Drive - Lesson Plans & Templates</a></li>
+                            <li>• <a href="https://hurunuicollegeschoolnz-my.sharepoint.com/:p:/r/personal/pb_hurunuicollege_school_nz/_layouts/15/Doc.aspx?sourcedoc=%7BE428A591-E88A-46DA-9937-160E0072356D%7D&file=What%27s-real-online---Be-SMART-2025-update.pptx&action=edit&mobileredirect=true" target="_blank" rel="noopener noreferrer" class="hover:underline">What's Real Online? - Be SMART</a></li>
+                            <li>• <a href="https://education.netsafe.org.nz/scorm/ai-image-quiz/story.html" target="_blank" rel="noopener noreferrer" class="hover:underline">AI Image Quiz</a></li>
+                            <li>• <a href="https://code.org/" target="_blank" rel="noopener noreferrer" class="hover:underline">Code.org Teacher Dashboard</a></li>
+                            <li>• <a href="https://csunplugged.org/" target="_blank" rel="noopener noreferrer" class="hover:underline">CS Unplugged Activities</a></li>
+                        </ul>
+                    </div>
+                    
+                    
+                    <div class="border border-amber-600/30 p-4 rounded">
+                        <h3 class="text-amber-hacker font-bold mb-2">📊 Student Progress</h3>
+                        <p class="text-sm text-amber-200 mb-2">Quiz Results: Access student pretest scores in the Admin Terminal</p>
+                        <p class="text-sm text-amber-200">Project Submissions: Monitor final portfolio submissions from the Admin Terminal</p>
+                    </div>
+                    
+                    <div class="border border-amber-600/30 p-4 rounded">
+                        <h3 class="text-amber-hacker font-bold mb-2">🔗 Useful Links</h3>
+                        <ul class="text-sm space-y-1 text-amber-200">
+                            <li>• <a href="https://www.w3schools.com/" target="_blank" rel="noopener noreferrer" class="hover:underline">W3Schools (Student & Teacher Reference)</a></li>
+                            <li>• <a href="https://replit.com/teams" target="_blank" rel="noopener noreferrer" class="hover:underline">Replit Teams (Classroom Setup)</a></li>
+                            <li>• <a href="https://codepen.io/pen/" target="_blank" rel="noopener noreferrer" class="hover:underline">CodePen (Create & Share Projects)</a></li>
+                            <li>• <a href="https://teachablemachine.withgoogle.com/" target="_blank" rel="noopener noreferrer" class="hover:underline">Google Teachable Machine (AI Demo)</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="border border-amber-600/30 p-4 rounded">
+                        <h3 class="text-amber-hacker font-bold mb-2">📋 Assessment & Rubric</h3>
+                        <p class="text-sm text-amber-200">Use the "ANALYZE: Rubric" section on the main page to show students grading criteria</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app" class="hidden">
+    <div class="container mx-auto p-4 md:p-8" style="background:#18181b;border:2px solid #FFB300;box-shadow:0 0 40px #FFB30077,0 0 8px #FFB300;border-radius:1.5rem;">
+        
+
+        <header class="text-center mb-8 border-b-2 border-amber-hacker pb-4 relative" style="text-shadow:0 0 8px #FFB300;">
+            <h1 class="text-4xl md:text-5xl font-bold text-amber-hacker uppercase tracking-wider" style="text-shadow:0 0 12px #FFB300;">Digital Technology: Code Creators</h1>
+            <p class="text-lg text-amber-500 mt-2" style="font-family:monospace;">[[ YEARS 7 & 8 | 9-WEEK COURSE | 18 HOURS TOTAL ]]</p>
+        </header>
+
+        <nav class="sticky top-0 bg-black z-10 mb-8 border-b-2 border-amber-hacker" style="box-shadow:0 0 8px #FFB300;">
+            <ul class="flex justify-center flex-wrap -mb-px" style="font-family:monospace;">
+                <li class="mr-2">
+                    <a onclick="showSection('roadmap')" class="nav-link active inline-block p-4 border-b-2 border-transparent hover:text-amber-500 hover:border-gray-500">LOG: Roadmap</a>
+                </li>
+                <li class="mr-2">
+                    <a onclick="showSection('challenge')" class="nav-link inline-block p-4 border-b-2 border-transparent hover:text-amber-500 hover:border-gray-500">INIT: Challenge</a>
+                </li>
+                <li class="mr-2">
+                    <a onclick="showSection('checklist')" class="nav-link inline-block p-4 border-b-2 border-transparent hover:text-amber-500 hover:border-gray-500">TASK: Checklist</a>
+                </li>
+                <li class="mr-2">
+                    <a onclick="showSection('deliverables')" class="nav-link inline-block p-4 border-b-2 border-transparent hover:text-amber-500 hover:border-gray-500">SUBMIT: Deliverables</a>
+                </li>
+                <li class="mr-2">
+                    <a onclick="showSection('submission')" class="nav-link inline-block p-4 border-b-2 border-transparent hover:text-amber-500 hover:border-gray-500">FINALIZE: Submission</a>
+                </li>
+                <li>
+                    <a onclick="showSection('rubric')" class="nav-link inline-block p-4 border-b-2 border-transparent hover:text-amber-500 hover:border-gray-500">ANALYZE: Rubric</a>
+                </li>
+            </ul>
+        </nav>
+
+    <main style="font-family:monospace;">
+            <section id="roadmap" class="space-y-8">
+                <div class="bg-gray-800 p-6 shadow-xl border border-amber-600/30">
+                    <h2 class="text-3xl font-bold mb-4 text-amber-hacker">1. LOG: Course Roadmap (9 Weeks)</h2>
+                    <p class="text-gray-400 leading-relaxed">
+                        This section shows the entire 9-week journey for Digital Technology (Years 7 & 8), covering computational thinking, Python programming, web development, data analysis, and AI ethics. Each 150-minute session builds your skills for the final Digital Portfolio project.
+                    </p>
+                     <div class="mt-4 pt-4 border-t border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between">
+                        <strong class="text-amber-hacker mb-2 sm:mb-0">[[ SYSTEM NOTIFICATION: ACCESS YOUR CODEPEN PROJECTS $\to$ ]]</strong>
+                        <a href="https://codepen.io/" target="_blank" class="inline-block px-4 py-2 text-sm text-amber-hacker border border-amber-hacker bg-amber-900/30 hover:bg-amber-800/50 transition-colors tracking-widest uppercase">
+                            &gt; LAUNCH_TERMINAL_LOGIN
+                        </a>
+                    </div>
+                </div>
+
+                <div class="bg-black p-6 shadow-xl border-2 border-amber-hacker overflow-x-auto" style="box-shadow:0 0 16px #FFB300;">
+                    <table class="w-full text-sm text-left text-amber-300 font-mono" style="background:#101010;border:2px solid #FFB300;box-shadow:0 0 8px #FFB300;">
+                        <thead class="text-xs text-amber-hacker uppercase bg-black border-b-2 border-amber-hacker" style="background:#101010;">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Week</th>
+                                <th scope="col" class="px-6 py-3">Core Topic</th>
+                                <th scope="col" class="px-6 py-3">Code Avengers Focus (Specific Course Title)</th>
+                                <th scope="col" class="px-6 py-3">Weekly Project / Outcome</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-black border-b border-amber-900 hover:bg-amber-900/20">
+                                <td class="px-6 py-4 font-bold text-gray-300">01</td>
+                                <td class="px-6 py-4">Digital Citizenship (Part 1)</td>
+                                <td class="px-6 py-4"><a href="https://www.netsafe.org.nz/" target="_blank" class="text-amber-400 hover:text-amber-200 underline">Netsafe (NZ)</a> & <a href="https://beinternetawesome.withgoogle.com/en_us/interland/landing/tower-of-treasure" target="_blank" class="text-amber-400 hover:text-amber-200 underline">Be Internet Awesome</a></td>
+                                <td class="px-6 py-4">Y7: Create a "Strong Password" guide | Y8: Analyse 2 examples of mis/disinformation</td>
+                            </tr>
+                            <tr class="bg-black border-b border-amber-900 hover:bg-amber-900/20">
+                                <td class="px-6 py-4 font-bold text-gray-300">02</td>
+                                <td class="px-6 py-4">Digital Citizenship (Part 2)</td>
+                                <td class="px-6 py-4"><a href="https://www.netsafe.org.nz/" target="_blank" class="text-amber-400 hover:text-amber-200 underline">Netsafe</a> (bias, accuracy, fact-checking)</td>
+                                <td class="px-6 py-4">Y7: Analyse a website for bias/accuracy | Y8: Create a "How to Fact-Check" guide</td>
+                            </tr>
+                            <tr class="bg-black border-b border-amber-900 hover:bg-amber-900/20">
+                                <td class="px-6 py-4 font-bold text-gray-300">03</td>
+                                <td class="px-6 py-4">Computational Thinking</td>
+                                <td class="px-6 py-4"><a href="https://csunplugged.org/en/topics/binary-numbers/" target="_blank" class="text-amber-400 hover:text-amber-200 underline">CS Unplugged Binary</a> & <a href="https://code.org/oceans" target="_blank" class="text-amber-400 hover:text-amber-200 underline">Code.org</a></td>
+                                <td class="px-6 py-4">Y7: Algorithm for toast | Y8: Algorithm for sorting. Binary conversion worksheet.</td>
+                            </tr>
+                            <tr class="bg-black border-b border-amber-900 hover:bg-amber-900/20">
+                                <td class="px-6 py-4 font-bold text-gray-300">04</td>
+                                <td class="px-6 py-4">Python Fundamentals</td>
+                                <td class="px-6 py-4"><a href="https://www.w3schools.com/python/" target="_blank" class="text-amber-400 hover:text-amber-200 underline">W3Schools Python</a> & <a href="https://replit.com/" target="_blank" class="text-amber-400 hover:text-amber-200 underline">Replit</a></td>
+                                <td class="px-6 py-4">Y7: Code a "Magic 8-Ball" | Y8: Code a "Number Guesser"</td>
+                            </tr>
+                            <tr class="bg-black border-b border-amber-900 hover:bg-amber-900/20">
+                                <td class="px-6 py-4 font-bold text-gray-300">05</td>
+                                <td class="px-6 py-4">Python: Loops</td>
+                                <td class="px-6 py-4"><a href="https://www.w3schools.com/python/" target="_blank" class="text-amber-400 hover:text-amber-200 underline">W3Schools Python</a> & <a href="https://codepen.io/" target="_blank" class="text-amber-400 hover:text-amber-200 underline">Codepen</a></td>
+                                <td class="px-6 py-4">Y7: Print a pattern using loops | Y8: "Choose Your Own Adventure" (loops & conditionals)</td>
+                            </tr>
+                            <tr class="bg-black border-b border-amber-900 hover:bg-amber-900/20">
+                                <td class="px-6 py-4 font-bold text-gray-300">06</td>
+                                <td class="px-6 py-4">Web Development</td>
+                                <td class="px-6 py-4"><a href="https://www.w3schools.com/html/" target="_blank" class="text-amber-400 hover:text-amber-200 underline">W3Schools HTML</a> & <a href="https://codepen.io/" target="_blank" class="text-amber-400 hover:text-amber-200 underline">Codepen</a></td>
+                                <td class="px-6 py-4">Kick-off Final Project. Create index.html & style.css for "Digital Portfolio" website.</td>
+                            </tr>
+                            <tr class="bg-black border-b border-amber-900 hover:bg-amber-900/20">
+                                <td class="px-6 py-4 font-bold text-gray-300">07</td>
+                                <td class="px-6 py-4">Data & Visualisation</td>
+                                <td class="px-6 py-4"><a href="https://sheets.google.com/" target="_blank" class="text-amber-400 hover:text-amber-200 underline">Google Sheets</a> / Excel</td>
+                                <td class="px-6 py-4">Y7: Organise class survey data | Y8: Clean data & create visualisation (chart/graph)</td>
+                            </tr>
+                            <tr class="bg-black border-b border-amber-900 hover:bg-amber-900/20">
+                                <td class="px-6 py-4 font-bold text-amber-hacker">08</td>
+                                <td class="px-6 py-4 font-bold text-amber-hacker">AI & Futures</td>
+                                <td class="px-6 py-4 font-bold text-amber-hacker"><a href="https://teachablemachine.withgoogle.com/" target="_blank" class="text-amber-300 hover:text-amber-100 underline">Google's Teachable Machine</a> & <a href="https://code.org/oceans" target="_blank" class="text-amber-300 hover:text-amber-100 underline">Code.org AI for Oceans</a></td>
+                                <td class="px-6 py-4 font-bold text-amber-hacker">Y7: Report "3 types of AI I use daily" | Y8: Report "Ethical risks of AI"</td>
+                            </tr>
+                            <tr class="bg-black border-b border-amber-900 hover:bg-amber-900/20">
+                                <td class="px-6 py-4 font-bold text-amber-hacker">09</td>
+                                <td class="px-6 py-4 font-bold text-amber-hacker">Final Project Work</td>
+                                <td class="px-6 py-4 font-bold text-amber-hacker">Digital Portfolio Submission & Presentation</td>
+                                <td class="px-6 py-4 font-bold text-amber-hacker">Final Project Due. Present your "Digital Portfolio" website to the class.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <section id="challenge" class="hidden space-y-8">
+                <div class="bg-gray-800 p-6 shadow-xl border border-amber-600/30">
+                    <h2 class="text-3xl font-bold mb-4 text-amber-hacker">2. INIT: Final Project Goal</h2>
+                    <p class="text-gray-400 leading-relaxed">
+                        Welcome to your final project! The goal is to use your HTML/CSS skills in CodePen to build a 3-page website that presents all the work you've done in this 9-week course. Your "Digital Portfolio" will showcase your Python code, data analysis, and AI research, along with your reflections on digital citizenship.
+                    </p>
+                </div>
+
+                <div class="bg-gray-800 p-6 shadow-xl border border-gray-700">
+                    <h3 class="text-2xl font-bold mb-4 text-amber-hacker">The Digital Portfolio Structure 📱</h3>
+                    <p class="text-gray-400 mb-4">Your portfolio website should include the following sections:</p>
+                    <ul class="list-disc list-inside text-gray-500 space-y-2">
+                        <li><strong>Homepage Section:</strong> A main section that introduces you and has links to your other sections.</li>
+                        <li><strong>"My Code" Section:</strong> Your final Python code with a write-up explaining what it does.</li>
+                        <li><strong>"My Research" Section:</strong> Your data project and AI ethics report (with Digital Citizenship reflection).</li>
+                        <li><strong>Published & Live:</strong> The final site must be viewable via its public CodePen link.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="checklist" class="hidden space-y-8">
+                <div class="bg-gray-800 p-6 shadow-xl border border-amber-600/30">
+                    <h2 class="text-3xl font-bold mb-4 text-amber-hacker">3. TASK: The Technical Checklist</h2>
+                    <p class="text-gray-400 leading-relaxed">
+                        To build a successful portfolio, you must include all the following elements. Use this interactive checklist to track your progress and ensure you don't miss anything important. Your goal is to check every box!
+                    </p>
+                </div>
+                <div class="bg-gray-800 p-6 shadow-xl border border-gray-700">
+                    <div class="space-y-4">
+                        <label class="flex items-center p-4 border border-gray-700 cursor-pointer">
+                            <input type="checkbox">
+                            <span class="ml-4">
+                                <strong class="font-bold text-amber-hacker">Homepage Section:</strong> A main section that introduces you and has links to your other sections.
+                            </span>
+                        </label>
+                         <label class="flex items-center p-4 border border-gray-700 cursor-pointer">
+                            <input type="checkbox">
+                            <span class="ml-4">
+                                <strong class="font-bold text-amber-hacker">CSS Styling:</strong> Consistent colour scheme, fonts, and layout throughout your portfolio.
+                            </span>
+                        </label>
+                         <label class="flex items-center p-4 border border-gray-700 cursor-pointer">
+                            <input type="checkbox">
+                            <span class="ml-4">
+                                <strong class="font-bold text-amber-hacker">"My Code" Section:</strong> Include your final Python code with a write-up explaining what it does.
+                            </span>
+                        </label>
+                         <label class="flex items-center p-4 border border-gray-700 cursor-pointer">
+                            <input type="checkbox">
+                            <span class="ml-4">
+                                <strong class="font-bold text-amber-hacker">"My Research" Section:</strong> Y7: Embed your data table & AI report | Y8: Embed your chart/graph & AI report.
+                            </span>
+                        </label>
+                         <label class="flex items-center p-4 border border-gray-700 cursor-pointer">
+                            <input type="checkbox">
+                            <span class="ml-4">
+                                <strong class="font-bold text-amber-hacker">Digital Citizenship Reflection:</strong> A short reflection on what you learned about digital citizenship or fake news.
+                            </span>
+                        </label>
+                         <label class="flex items-center p-4 border border-gray-700 cursor-pointer">
+                            <input type="checkbox">
+                            <span class="ml-4">
+                                <strong class="font-bold text-amber-hacker">Published & Live:</strong> The final site must be viewable via its public CodePen link.
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="deliverables" class="hidden space-y-8">
+                <div class="bg-gray-800 p-6 shadow-xl border border-amber-600/30">
+                    <h2 class="text-3xl font-bold mb-4 text-amber-hacker">4. SUBMIT: Assessment Weighting</h2>
+                     <p class="text-gray-400 leading-relaxed">
+                        Your final grade is based on four key components of your Digital Portfolio. This section breaks down the weighting and what's required for each. Focus on delivering quality in both your content and design!
+                    </p>
+                </div>
+                <div class="grid md:grid-cols-2 gap-8 text-center">
+                    <div class="bg-gray-800 p-6 shadow-xl border border-gray-700">
+                        <div class="text-3xl font-bold text-amber-hacker mb-2">40%</div>
+                        <h3 class="text-xl font-bold mb-3 text-gray-300">Digital Content (HTML/CSS)</h3>
+                        <ul class="text-left list-disc list-inside text-gray-500">
+                            <li>All required sections present & functional</li>
+                            <li>Links work and all project work is embedded</li>
+                            <li>Polished design & responsive layout</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-800 p-6 shadow-xl border border-gray-700">
+                        <div class="text-3xl font-bold text-amber-hacker mb-2">20%</div>
+                        <h3 class="text-xl font-bold mb-3 text-gray-300">Programming & CT (Python)</h3>
+                        <ul class="text-left list-disc list-inside text-gray-500">
+                            <li>Python project complete & functional</li>
+                            <li>Meets Y7/Y8 requirements (loops, etc.)</li>
+                            <li>Clean, well-commented code</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-800 p-6 shadow-xl border border-gray-700">
+                         <div class="text-3xl font-bold text-amber-hacker mb-2">30%</div>
+                        <h3 class="text-xl font-bold mb-3 text-gray-300">Data & AI Research</h3>
+                         <ul class="text-left list-disc list-inside text-gray-500">
+                            <li>Data project complete (Y7: organised | Y8: visualised)</li>
+                            <li>AI ethics report meets requirements</li>
+                            <li>Shows deep insight & understanding</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-800 p-6 shadow-xl border border-gray-700">
+                         <div class="text-3xl font-bold text-amber-hacker mb-2">10%</div>
+                        <h3 class="text-xl font-bold mb-3 text-gray-300">Digital Citizenship (Reflection)</h3>
+                         <ul class="text-left list-disc list-inside text-gray-500">
+                            <li>Reflection on digital citizenship lessons</li>
+                            <li>Connects concepts meaningfully</li>
+                            <li>Shows learning & critical thinking</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="submission" class="hidden space-y-8">
+                <div class="bg-gray-800 p-6 shadow-xl border border-amber-600/30">
+                    <h2 class="text-3xl font-bold mb-4 text-amber-hacker">5. FINALIZE: Assessment Submission</h2>
+                    <p class="text-gray-400 leading-relaxed">
+                        When your code is polished, your planning is complete, and you are ready for the final presentation, use this terminal interface to submit your final project link.
+                    </p>
+                </div>
+
+                <div class="bg-gray-800 p-6 shadow-xl border border-gray-700">
+                    <h3 class="text-2xl font-bold mb-4 text-gray-300">[[ SYSTEM: UPLOAD PROTOCOL INITIATED ]]</h3>
+                    <form onsubmit="handleSubmission(event)">
+                        <div class="mb-6">
+                            <label for="projectName" class="block text-sm font-medium text-amber-hacker mb-2">Project Name:</label>
+                            <input type="text" id="projectName" name="projectName" required class="w-full p-3 bg-gray-900 border border-amber-600/50 text-amber-hacker focus:ring-amber-500 focus:border-amber-500" placeholder="e.g., The Ultimate Calculator v1.0">
+                        </div>
+
+                        <div class="mb-6">
+                            <label for="projectLink" class="block text-sm font-medium text-amber-hacker mb-2">Final Project Link (URL):</label>
+                            <input type="url" id="projectLink" name="projectLink" required class="w-full p-3 bg-gray-900 border border-amber-600/50 text-amber-hacker focus:ring-amber-500 focus:border-amber-500" placeholder="https://my-awesome-project.codepen.io/...">
+                            <p class="text-xs text-gray-500 mt-1">Provide the live link to your working prototype.</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="planningDoc" class="block text-sm font-medium text-amber-hacker mb-2">Planning Document Link (Optional):</label>
+                            <input type="url" id="planningDoc" name="planningDoc" class="w-full p-3 bg-gray-900 border border-amber-600/50 text-amber-hacker focus:ring-amber-500 focus:border-amber-500" placeholder="https://docs.google.com/d/...">
+                            <p class="text-xs text-gray-500 mt-1">Link to your wireframe and algorithm/flowchart.</p>
+                        </div>
+
+                        <button type="submit" class="w-full md:w-auto px-6 py-3 text-lg text-amber-hacker border border-amber-hacker bg-black hover:bg-amber-900/50 transition-colors tracking-widest uppercase font-bold font-mono" style="box-shadow:0 0 8px #FFB300;">
+                            &gt; INITIATE_SUBMISSION
+                        </button>
+                    </form>
+
+                    <div id="submission-message" class="mt-6 p-4 border border-yellow-500 bg-yellow-900/30 text-yellow-400 hidden">
+                        </div>
+                </div>
+            </section>
+            
+            <section id="rubric" class="hidden space-y-8">
+                <div class="bg-gray-800 p-6 shadow-xl border border-amber-600/30">
+                    <h2 class="text-3xl font-bold mb-4 text-amber-hacker">6. ANALYZE: The Rubric Explorer</h2>
+                    <p class="text-gray-400 leading-relaxed">
+                        Understanding how you'll be marked is the key to success. This interactive rubric explorer helps you break down the assessment criteria for your Digital Portfolio. Click on a **criterion button** (like "Digital Content") to highlight that entire row, or click on a **SOLO Level button** (like "Relational") to highlight that column. This lets you focus on exactly what you need to do to reach the next level.
+                    </p>
+                </div>
+
+                <div class="bg-gray-800 p-6 shadow-xl border border-gray-700">
+                    <div class="mb-4">
+                        <h3 class="font-bold mb-2 text-amber-hacker">Filter by Criterion:</h3>
+                        <div class="flex flex-wrap gap-2">
+                             <button onclick="highlightRubric('criterion', 0)" class="bg-amber-600 text-gray-900 px-3 py-1 rounded-none font-bold hover:bg-amber-400 transition-colors text-sm border border-amber-600">Digital Content (HTML/CSS)</button>
+                            <button onclick="highlightRubric('criterion', 1)" class="bg-amber-600 text-gray-900 px-3 py-1 rounded-none font-bold hover:bg-amber-400 transition-colors text-sm border border-amber-600">Programming & CT (Python)</button>
+                            <button onclick="highlightRubric('criterion', 2)" class="bg-amber-600 text-gray-900 px-3 py-1 rounded-none font-bold hover:bg-amber-400 transition-colors text-sm border border-amber-600">Data & AI Research</button>
+                            <button onclick="highlightRubric('criterion', 3)" class="bg-amber-600 text-gray-900 px-3 py-1 rounded-none font-bold hover:bg-amber-400 transition-colors text-sm border border-amber-600">Digital Citizenship</button>
+                        </div>
+                    </div>
+                     <div class="mb-6">
+                        <h3 class="font-bold mb-2 text-amber-hacker">Filter by SOLO Level:</h3>
+                        <div class="flex flex-wrap gap-2">
+                             <button onclick="highlightRubric('level', 1)" class="bg-gray-700 text-amber-hacker px-3 py-1 rounded-none hover:bg-gray-600 transition-colors text-sm border border-amber-hacker">Unistructural</button>
+                             <button onclick="highlightRubric('level', 2)" class="bg-gray-700 text-amber-hacker px-3 py-1 rounded-none hover:bg-gray-600 transition-colors text-sm border border-amber-hacker">Multistructural</button>
+                             <button onclick="highlightRubric('level', 3)" class="bg-gray-700 text-amber-hacker px-3 py-1 rounded-none hover:bg-gray-600 transition-colors text-sm border border-amber-hacker">Relational</button>
+                             <button onclick="highlightRubric('level', 4)" class="bg-gray-700 text-amber-hacker px-3 py-1 rounded-none hover:bg-gray-600 transition-colors text-sm border border-amber-hacker">Extended Abstract</button>
+                        </div>
+                    </div>
+                    <button onclick="highlightRubric('reset', null)" class="bg-gray-700 text-gray-400 px-4 py-2 rounded-none hover:bg-gray-600 transition-colors mb-6 border border-gray-600">CLEAR [X]</button>
+
+                    <div class="overflow-x-auto">
+                        <table id="rubric-table" class="w-full border-collapse border border-gray-700">
+                            <thead>
+                                <tr class="bg-gray-700 text-amber-hacker border border-amber-600">
+                                    <th class="p-3 font-bold text-left border border-gray-700">Criterion</th>
+                                    <th class="p-3 font-bold text-left border border-gray-700">Unistructural (≈ Lvl 3)</th>
+                                    <th class="p-3 font-bold text-left border border-gray-700">Multistructural (≈ Lvl 3-4)</th>
+                                    <th class="p-3 font-bold text-left border border-gray-700">Relational (≈ Lvl 4)</th>
+                                    <th class="p-3 font-bold text-left border border-gray-700">Extended Abstract (≈ Lvl 4+)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="rubric-row">
+                                    <td class="p-3 border border-gray-700 font-semibold rubric-cell text-gray-300">Digital Content (HTML/CSS) (40%)</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The CodePen exists but has broken links, missing content, and little to no CSS styling.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The CodePen meets all requirements. It has all required sections, links work, and all project work is embedded. CSS is used and functional.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The CodePen is polished, responsive, and easy to navigate. The design and layout show creativity and planning.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The design justifies choices based on UX principles (e.g., accessibility, contrast). The student uses advanced features (e.g., CSS animations) to enhance communication, not just decoration.</td>
+                                </tr>
+                                <tr class="rubric-row">
+                                    <td class="p-3 border border-gray-700 font-semibold rubric-cell text-gray-300">Programming & CT (Python) (20%)</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The Python project is included but is incomplete or has significant errors.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The Python project is complete, runs correctly, and meets the Y7/Y8 requirements (e.g., Y8 has loops).</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The Python code is clean, well-commented, and includes extension features beyond the basic requirements.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The code generalises the solution. It uses efficient data structures (e.g., lists/dictionaries) instead of repetition and handles unexpected user input gracefully.</td>
+                                </tr>
+                                 <tr class="rubric-row">
+                                    <td class="p-3 border border-gray-700 rubric-cell font-semibold text-gray-300">Data & AI Research (30%)</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The Data and AI projects are missing or are very brief and show little understanding.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The Data and AI reports are complete and meet the Y7/Y8 requirements (e.g., Y8 has a chart and discusses ethics).</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The reports show deep insight. The data is well-cleaned and the AI ethics discussion is well-reasoned.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The student critically evaluates the limitations of the dataset or AI tool itself. They propose specific, actionable solutions to the ethical risks or data bias identified.</td>
+                                </tr>
+                                <tr class="rubric-row">
+                                    <td class="p-3 border border-gray-700 rubric-cell font-semibold text-gray-300">Digital Citizenship (Reflection) (10%)</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The reflection is missing or is a single sentence.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The student includes a reflection that explains what they learned about digital citizenship.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The reflection connects concepts, explaining how digital citizenship relates to AI bias or data privacy.</td>
+                                    <td class="p-3 border border-gray-700 rubric-cell">The reflection advocates for a change in behaviour. It generalises the specific lesson to broader principles (e.g., "Digital Rights") that apply to future technologies.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    </div> <script>
+        /**
+         * Toggles highlighting on the rubric table cells based on criterion (row) or level (column).
+         * @param {string} type - 'criterion', 'level', or 'reset'.
+         * @param {number} index - The zero-based row index (0-3) for criterion or one-based column index (1-4) for level.
+         */
+        function highlightRubric(type, index) {
+            const table = document.getElementById('rubric-table');
+            const rows = table.querySelectorAll('.rubric-row');
+
+            // 1. Clear all existing highlights
+            table.querySelectorAll('.rubric-cell').forEach(cell => {
+                cell.classList.remove('highlight');
+            });
+
+            if (type === 'reset' || index === null) {
+                return; // Just clear and exit
+            }
+
+            if (type === 'criterion') {
+                // Highlight the entire row (index 0 for first row, 1 for second, etc.)
+                const row = rows[index];
+                if (row) {
+                    row.querySelectorAll('.rubric-cell').forEach(cell => {
+                        cell.classList.add('highlight');
+                    });
+                }
+            } else if (type === 'level') {
+                // Highlight the entire column (index 1 for Unistructural, 2 for Multistructural, etc.)
+                // The index (1-4) maps directly to the cell index (1-4) in the array of rubric-cells.
+                const columnIndex = index; 
+
+                rows.forEach(row => {
+                    // Get only the rubric-cell elements in this row
+                    const cells = row.querySelectorAll('.rubric-cell');
+                    
+                    // The columnIndex (1-4) selects the correct SOLO level cell
+                    if (cells.length > columnIndex) {
+                        cells[columnIndex].classList.add('highlight');
+                    }
+                });
+            }
+        }
+    </script>
+    <script>
+        // Simulated Boot Sequence (restores the terminal loading animation)
+        const bootTextElement = document.getElementById('boot-text');
+        const bootSequence = [
+            "INIT: SYSTEM_CORE_V1.3A",
+            "SCANNING_MANIFEST: /PROJECT_CHALLENGE/WEEKS_1-9",
+            "DETECTED: CODEAVENGERS_AUTH_PROTOCOL",
+            "LOADING: HACKER_TERMINAL_UI_V2.1",
+            "CHECKLIST_STATUS: OK",
+            "ACCESS: GRANTED."
+        ];
+        
+        let i = 0;
+        let delay = 300; // Milliseconds per line
+        
+        function bootLine() {
+            if (i < bootSequence.length) {
+                // Add a blinking cursor for the terminal effect
+                bootTextElement.innerHTML = bootTextElement.innerHTML.replace('_', '') + `> ${bootSequence[i]}_` + '\n';
+                i++;
+                setTimeout(bootLine, delay);
+            } else {
+                // Clean up and show the main content
+                bootTextElement.innerHTML = bootTextElement.innerHTML.replace('_', ''); // Remove final cursor
+                setTimeout(() => {
+                    document.getElementById('boot-sequence').classList.add('hidden');
+                    document.getElementById('main-app').classList.remove('hidden');
+                }, 800);
+            }
+        }
+
+        // Start the boot sequence animation
+        bootLine();
+    </script>
+
+    <!-- Firebase & App Scripts - Loaded at end so all HTML elements exist -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="pretest.js"></script>
+    <script src="hacker-tabs.js"></script>
+    <script src="submit.js"></script>
+    </body>
+</html>
