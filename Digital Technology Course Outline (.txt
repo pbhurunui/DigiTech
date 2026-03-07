@@ -1,0 +1,156 @@
+Digital Technology Course Outline (Years 7 & 8)
+Course Overview: Code Creators
+This 9-week course is designed to introduce students to fundamental concepts in computational thinking, programming logic, and web development, leveraging the interactive, project-based learning structure of Code Avengers.
+Term Duration
+Session Length
+Total Learning Time
+Focus Areas
+9 Weeks
+2 hours (120 minutes)
+18 hours
+Computational Thinking, Python Programming, HTML/CSS Web Development, JavaScript Interactivity, Digital Design.
+
+Weekly Breakdown (150-Minute Sessions)
+Session Structure
+Each 150-minute session is broken down to maximize focused learning and application:
+Time Slot
+Duration
+Activity Focus
+11:10 - 11:20
+10 min
+Warm-up & Review: Recap last week, learning goal introduction, quick coding quiz.
+11:20 - 12:00
+40 min
+Core Lesson: Guided completion of new modules (e.g., watching tutorials, completing coding challenges).
+12:00 - 12:20
+20 min
+Break & Quick Challenge: Stand-up, movement, and a short, fun unplugged activity (e.g., sequencing game).
+12:20 - 13:05
+45 min
+Applied Project Work & Extension: Individual or pair work applying skills to the weekly project, with teacher support.
+13:05 - 13:10
+5 min
+Share & Wrap-up: Students showcase progress, clean up, and debrief on key learning points.
+
+Course Content Plan (9 Weeks)
+Week
+Core Topic
+Focus (Equivalent Module)
+Weekly Project / Outcome
+1
+Digital Citizenship (Part 1)
+Netsafe (NZ) Teaching Resources. Google's "Be Internet Awesome" (for Y7).
+Y7: Create a "Strong Password" guide.
+
+Y8: Find and analyse 2 examples of mis/disinformation using Netsafe guides.
+2
+Digital Citizenship (Part 2)
+Netsafe (NZ) Teaching Resources (specifically on bias, accuracy, and fact-checking).
+Y7: Analyse a website for bias/accuracy.
+
+Y8: Create a "How to Fact-Check" guide (linking to Week 1).
+3
+Computational Thinking
+CS Unplugged "Binary Numbers" Activity. Code.org "Binary" units.
+Unplugged: Y7: Write algorithm for toast.
+Plugged: Complete a binary-to-decimal conversion worksheet or game.
+Y8: Write algorithm for sorting.
+4
+Python Fundamentals
+W3Schools Python (as the tutorial/reference).
+
+Integrated Development Environment (as the free code editor). 
+Y7: Code a simple "Magic 8-Ball"
+
+Y8: Code a "Number Guesser"
+5
+Python: Loops
+W3Schools Python (as the tutorial/reference).
+
+Integrated Development Environment (as the free code editor). 
+Y7: Use a loop to print a pattern in Codepen
+
+Y8: Build a "Choose Your Own Adventure" in Codepen (using loops & conditionals).
+6
+Web Development
+W3Schools HTML (as the tutorial/reference).
+
+Codepen (as the free code editor).
+Kick-off Final Project. 
+
+Create the index.html & style.css in Codepen for a "Digital Portfolio" website.
+7
+Data & Visualisation
+Google Sheets / Excel
+Part 2
+Part 3 (Primary Resource).
+Data Project: Class survey. 
+
+Y7: Organise the data.
+
+Y8: Clean the data & create a visualisation (chart/graph).
+8
+AI & Futures
+Google's Teachable Machine (Live Demo). 
+
+Code.org "AI for Oceans" (Activity).
+AI Project: 
+
+Y7: Report: "3 types of AI I use every day" (and potential bias).
+
+Y8: Report: "Ethical risks of AI" (benefits vs. risks).
+9
+Final Project Work
+Final Project Work
+Final Project Due.
+
+Present your "Digital Portfolio" website to the class.
+
+
+Assessment and Marking Schedule
+This course primarily focuses on Formative Assessment (feedback and improvement) throughout the term, culminating in a Summative Assessment based on the final project (Weeks 8 & 9).
+2. INIT: Final Project Goal (The "Digital Portfolio")
+The Goal: Use your HTML/CSS skills in CodePen to build a 3-page website that presents all the work you've done in this 9-week course. (Note: In CodePen, you can simulate pages with links that jump to different sections of your one-page app, or create separate Pens and link them).
+3. TASK: The Technical Checklist
+To build a successful portfolio, you must include the following:
+Homepage Section: A main section that introduces you and has links to your other sections.
+CSS Styling: The project must be styled with a consistent colour scheme, fonts, and layout.
+"My Code" Section:
+Must include your final Python code (you can copy-paste it into the HTML).
+Must have a write-up explaining what it does.
+"My Research" Section:
+Y7: Must embed your Data (the organised table from Google Sheets) and your AI Report (on everyday AI).
+Y8: Must embed your Data Visualisation (the chart from Google Sheets) and your AI Report (on ethics).
+Must include a short reflection on Digital Citizenship (e.g., "What I learned about fake news").
+Published: The final site must be viewable via its public CodePen link.
+
+Summative Assessment Rubric (Final Project - Weeks 8 & 9) using SOLO Taxonomy
+The final project (Game/App Prototype or extended Week 7 To-Do List) will be assessed using the following SOLO criteria:
+Criteria
+Unistructural (≈ Level 3)
+Multistructural (≈ Level 3 - Early 4)
+Relational (≈ Competent Level 4)
+Extended Abstract (≈ Mastery Level 4+)
+Digital Content (HTML/CSS) (40%)
+The CodePen exists but has broken links, missing content, and little to no CSS styling.
+The CodePen meets all requirements. It has all required sections, links work, and all project work is embedded. CSS is used and functional.
+The CodePen is polished, responsive, and easy to navigate. The design and layout show creativity and planning.
+The design justifies choices based on User Experience (UX) principles (e.g., accessibility, contrast). The student may use advanced features (e.g., CSS animations) to enhance communication, not just for decoration.
+Programming & CT (Python) (20%)
+The Python project is included but is incomplete or has significant errors.
+The Python project is complete, runs correctly, and meets the Y7/Y8 requirements (e.g., Y8 has loops).
+The Python code is clean, well-commented, and includes extension features beyond the basic requirements.
+The code generalises the solution. It uses efficient data structures (e.g., lists/dictionaries) instead of repetition and handles unexpected user input gracefully (robustness).
+Data & AI Research (30%)
+The Data and AI projects are missing or are very brief and show little understanding.
+The Data and AI reports are complete and meet the Y7/Y8 requirements (e.g., Y8 has a chart and discusses ethics).
+The reports show deep insight. The data is well-cleaned and the AI ethics discussion is well-reasoned.
+The student critically evaluates the limitations of the dataset or the AI tool itself. They propose specific, actionable solutions to the ethical risks or data bias identified.
+Digital Citizenship (Reflection) (10%)
+The reflection is missing or is a single sentence.
+The student includes a reflection that explains what they learned about digital citizenship.
+The reflection connects concepts, explaining how digital citizenship relates to AI bias or data privacy.
+The reflection advocates for a change in behaviour. It generalises the specific lesson to broader principles (e.g., "Digital Rights") that apply to future technologies, not just the ones studied.
+
+
+
