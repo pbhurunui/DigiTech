@@ -2,8 +2,8 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   root: 'DigiTech',
-  base: '/DigiTech/',
   build: {
-    outDir: '../dist'
+    outDir: '../dist',
+    emptyOutDir: true
   }
 })
