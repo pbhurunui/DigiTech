@@ -99,6 +99,41 @@ function usernameToEmail(username) {
   return `${safe}@digitech.local`;
 }
 
+function usernameToEmailVariants(username) {
+  const raw = (username || '').trim().toLowerCase();
+  const safe = raw.replace(/[^a-z0-9_.-]/g, '');
+  const variants = [];
+  if (safe) variants.push(`${safe}@digitech.local`);
+  // Backward-compatibility for any older accounts created with unsanitized local parts.
+  if (raw && raw !== safe) variants.push(`${raw}@digitech.local`);
+  return Array.from(new Set(variants));
+}
+
+function formatStudentAuthError(error, mode = 'login') {
+  const code = error && error.code ? error.code : 'unknown';
+  if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
+    return 'Incorrect username or password.';
+  }
+  if (code === 'auth/user-not-found') {
+    return mode === 'create'
+      ? 'Username not found. Create a new account.'
+      : 'Username not found. Check spelling or create a new account.';
+  }
+  if (code === 'auth/email-already-in-use') {
+    return 'That username already exists. Use Login.';
+  }
+  if (code === 'auth/too-many-requests') {
+    return 'Too many attempts. Wait a minute, then try again.';
+  }
+  if (code === 'auth/network-request-failed') {
+    return 'Network error. Check internet and try again.';
+  }
+  if (code === 'auth/unauthorized-domain') {
+    return 'This domain is not authorized in Firebase Auth settings.';
+  }
+  return `${mode === 'create' ? 'Account' : 'Login'} failed: ${code}`;
+}
+
 function getStudentIdentity() {
   const user = firebase.auth().currentUser;
   if (user && !user.isAnonymous) {
@@ -484,12 +519,13 @@ async function showQuizOverlay() {
       return null;
     }
     const email = usernameToEmail(enteredUsername);
+    const emailVariants = usernameToEmailVariants(enteredUsername);
     if (!email) {
       setAuthStatus('Use letters and numbers in username.', '#f87171');
       return null;
     }
     const rememberLogin = !!(rememberCheckbox && rememberCheckbox.checked);
-    return { enteredUsername, enteredPassword, email, rememberLogin };
+    return { enteredUsername, enteredPassword, email, emailVariants, rememberLogin };
   };
   if (rememberCheckbox) {
     rememberCheckbox.onchange = () => {
@@ -511,11 +547,7 @@ async function showQuizOverlay() {
         document.getElementById('quiz-username').value = payload.enteredUsername;
         setAuthStatus('Account created. Your work will save to this account.', '#00ff41');
       } catch (error) {
-        if (error && error.code === 'auth/email-already-in-use') {
-          setAuthStatus('Username already exists. Use Login instead.', '#f87171');
-        } else {
-          setAuthStatus(`Auth error: ${error.code || 'unknown'}`, '#f87171');
-        }
+        setAuthStatus(formatStudentAuthError(error, 'create'), '#f87171');
       }
     };
   }
@@ -526,7 +558,19 @@ async function showQuizOverlay() {
       setAuthStatus('Signing in...', '#ffaa00');
       try {
         await configureAuthPersistence(payload.rememberLogin);
-        const credential = await firebase.auth().signInWithEmailAndPassword(payload.email, payload.enteredPassword);
+        let credential = null;
+        let finalError = null;
+        for (const candidateEmail of payload.emailVariants) {
+          try {
+            credential = await firebase.auth().signInWithEmailAndPassword(candidateEmail, payload.enteredPassword);
+            break;
+          } catch (attemptError) {
+            finalError = attemptError;
+          }
+        }
+        if (!credential) {
+          throw finalError || new Error('login-failed');
+        }
         if (credential.user && !credential.user.displayName) {
           await credential.user.updateProfile({ displayName: payload.enteredUsername });
         }
@@ -534,7 +578,7 @@ async function showQuizOverlay() {
         document.getElementById('quiz-username').value = payload.enteredUsername;
         setAuthStatus('Login successful. Your work will save to this account.', '#00ff41');
       } catch (error) {
-        setAuthStatus(`Login failed: ${error.code || 'unknown'}`, '#f87171');
+        setAuthStatus(formatStudentAuthError(error, 'login'), '#f87171');
       }
     };
   }
