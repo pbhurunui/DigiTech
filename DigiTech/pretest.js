@@ -111,6 +111,14 @@ function usernameToEmailVariants(username) {
 
 function formatStudentAuthError(error, mode = 'login') {
   const code = error && error.code ? error.code : 'unknown';
+  const message = error && error.message ? String(error.message).toLowerCase() : '';
+  if (
+    message.includes('requests-from-referer') ||
+    message.includes('requests from referer') ||
+    message.includes('api_key_http_referrer_blocked')
+  ) {
+    return 'Login blocked by API key referrer restrictions. Add pbhurunui.github.io to allowed API key referrers in Google Cloud Console.';
+  }
   if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
     return 'Incorrect username or password.';
   }
