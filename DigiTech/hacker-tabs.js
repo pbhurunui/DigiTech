@@ -16,6 +16,9 @@ function showSection(sectionId) {
   // Show the selected section
   const showEl = document.getElementById(sectionId);
   if (showEl) showEl.classList.remove('hidden');
+  if (sectionId === 'submission' && typeof loadWeeklyProgressForStudent === 'function') {
+    loadWeeklyProgressForStudent();
+  }
 
   // Update nav-link active state and add hacker neon effect
   document.querySelectorAll('.nav-link').forEach(link => {

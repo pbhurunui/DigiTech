@@ -12,6 +12,216 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+let forceRetakeMode = false;
+let adminAuthUnsubscribe = null;
+let adminPopupInProgress = false;
+
+function formatAdminAuthError(err) {
+  const code = (err && err.code) ? err.code : 'unknown';
+  const message = (err && err.message) ? String(err.message) : '';
+  const lowerMessage = message.toLowerCase();
+
+  if (
+    lowerMessage.includes('api_key_http_referrer_blocked') ||
+    lowerMessage.includes('requests from referer') ||
+    lowerMessage.includes('identitytoolkit.googleapis.com')
+  ) {
+    return 'Login blocked by API key referrer restrictions. In Google Cloud Console, allow this domain under API key HTTP referrers and keep Identity Toolkit API enabled.';
+  }
+
+  if (code === 'auth/cancelled-popup-request') {
+    return 'A login popup is already open. Complete that popup first.';
+  }
+  if (code === 'auth/popup-closed-by-user') {
+    return 'Sign-in popup was closed before completion. Click Sign in again or use Redirect Sign-in.';
+  }
+  if (code === 'auth/popup-blocked') {
+    return 'Popup was blocked by the browser. Use redirect sign-in below.';
+  }
+  if (code === 'auth/operation-not-allowed') {
+    return 'Google sign-in is not enabled in Firebase Auth. Enable Google provider in Authentication > Sign-in method.';
+  }
+  if (code === 'auth/unauthorized-domain') {
+    return 'This domain is not authorized. Add this Codespaces domain in Firebase Auth authorized domains.';
+  }
+  return `${message || 'Sign-in failed.'} (${code})`;
+}
+
+const REMEMBER_PREF_KEY = 'digitech_remember_pref';
+const SAVED_USERNAME_KEY = 'digitech_saved_username';
+
+async function configureAuthPersistence(rememberUser) {
+  const mode = rememberUser
+    ? firebase.auth.Auth.Persistence.LOCAL
+    : firebase.auth.Auth.Persistence.SESSION;
+  try {
+    await firebase.auth().setPersistence(mode);
+  } catch (error) {
+    console.warn('Could not set auth persistence:', error);
+  }
+}
+
+configureAuthPersistence(localStorage.getItem(REMEMBER_PREF_KEY) !== '0');
+
+// Ensure reads/writes work with Firestore rules that require authenticated users.
+async function ensureFirebaseReady() {
+  if (firebase.auth().currentUser) return firebase.auth().currentUser;
+  return new Promise((resolve) => {
+    const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
+      unsubscribe();
+      resolve(user || null);
+    });
+  });
+}
+
+function formatDbError(error) {
+  const code = error && error.code ? error.code : 'unknown';
+  if (code === 'permission-denied') {
+    return '[Database permission denied]';
+  }
+  if (code === 'unauthenticated') {
+    return '[Authentication required before saving]';
+  }
+  return `[Error saving to database: ${code}]`;
+}
+
+function formatAdminResultsError(error) {
+  const code = error && error.code ? error.code : 'unknown';
+  if (code === 'permission-denied') {
+    return 'Missing or insufficient permissions. Firestore rules must allow admin read access to quizResults and submissions.';
+  }
+  return (error && error.message) ? error.message : `Unknown error (${code})`;
+}
+
+function usernameToEmail(username) {
+  const safe = (username || '').trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
+  if (!safe) return null;
+  return `${safe}@digitech.local`;
+}
+
+function getStudentIdentity() {
+  const user = firebase.auth().currentUser;
+  if (user && !user.isAnonymous) {
+    const fallbackName = user.email ? user.email.split('@')[0] : 'student';
+    return {
+      username: user.displayName || fallbackName,
+      userId: user.uid,
+      email: user.email || null,
+      authenticated: true
+    };
+  }
+  return {
+    username: localStorage.getItem(SAVED_USERNAME_KEY) || '',
+    userId: null,
+    email: null,
+    authenticated: false
+  };
+}
+
+function revealMainSite() {
+  const overlay = document.getElementById('quiz-overlay');
+  if (overlay) overlay.style.display = 'none';
+  document.body.classList.remove('overflow-hidden');
+  const mainApp = document.getElementById('main-app');
+  if (mainApp) {
+    mainApp.classList.remove('hidden');
+    mainApp.style.display = '';
+  }
+  const mainContent = document.querySelector('.container');
+  if (mainContent) mainContent.style.display = '';
+  const retakeBtn = document.getElementById('retake-link');
+  if (retakeBtn) retakeBtn.style.display = '';
+}
+
+function showCompletedPrompt(identity) {
+  let overlay = document.getElementById('quiz-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'quiz-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.background = '#101010';
+    overlay.style.zIndex = 9999;
+    overlay.style.display = 'flex';
+    overlay.style.flexDirection = 'column';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.fontFamily = "'Space Mono', monospace";
+    document.body.appendChild(overlay);
+  }
+
+  const currentName = identity && identity.username ? identity.username : 'student';
+  overlay.innerHTML = `
+    <div style="background:#18181b;border:2px solid #00ff41;box-shadow:0 0 40px #00ff4177,0 0 8px #00ff41;max-width:560px;width:95vw;padding:2rem;border-radius:1.2rem;text-align:left;box-sizing:border-box;">
+      <div style="font-size:1.15rem;color:#00ff41;font-family:'Space Mono',monospace;text-shadow:0 0 8px #00ff41;letter-spacing:1px;display:flex;align-items:center;gap:0.5rem;">
+        <span style="font-size:1.8rem;">&#x25B6;</span> <span>Pre-Test Already Completed</span>
+      </div>
+      <div style="margin-top:1rem;color:#c7f9d8;line-height:1.5;">
+        Signed in as <b>${escapeHTML(currentName)}</b>. This account already has a saved pre-test.
+      </div>
+      <div style="margin-top:1.4rem;display:flex;gap:0.7rem;flex-wrap:wrap;">
+        <button id="continue-current-student" style="padding:0.55rem 1.1rem;background:#00ff41;color:#18181b;font-weight:bold;border:none;border-radius:0.45rem;box-shadow:0 0 8px #00ff41;cursor:pointer;font-family:'Space Mono',monospace;">Continue to Site</button>
+        <button id="switch-student-account" style="padding:0.55rem 1.1rem;background:#101010;color:#00ff41;font-weight:bold;border:1px solid #00ff41;border-radius:0.45rem;box-shadow:0 0 8px #00ff41;cursor:pointer;font-family:'Space Mono',monospace;">Switch Student Login</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('continue-current-student').onclick = () => {
+    revealMainSite();
+  };
+
+  document.getElementById('switch-student-account').onclick = async () => {
+    try {
+      await firebase.auth().signOut();
+    } catch (error) {
+      console.error('Sign out failed while switching student:', error);
+    }
+    forceRetakeMode = false;
+    showQuizOverlay();
+  };
+}
+
+function updateStudentSessionUI(user) {
+  const logoutBtn = document.getElementById('student-logout-link');
+  const badge = document.getElementById('student-session-badge');
+  if (!logoutBtn || !badge) return;
+
+  if (user && !user.isAnonymous) {
+    const label = user.displayName || (user.email ? user.email.split('@')[0] : 'student');
+    logoutBtn.style.display = '';
+    badge.style.display = '';
+    badge.textContent = `Signed in: ${label}`;
+    return;
+  }
+
+  logoutBtn.style.display = 'none';
+  badge.style.display = 'none';
+}
+
+function setupStudentLogoutUI() {
+  const logoutBtn = document.getElementById('student-logout-link');
+  if (!logoutBtn) return;
+
+  logoutBtn.onclick = async () => {
+    try {
+      await firebase.auth().signOut();
+      if (localStorage.getItem(REMEMBER_PREF_KEY) === '0') {
+        localStorage.removeItem(SAVED_USERNAME_KEY);
+      }
+      forceRetakeMode = false;
+      showQuizOverlay();
+    } catch (error) {
+      console.error('Student logout failed:', error);
+    }
+  };
+
+  firebase.auth().onAuthStateChanged((user) => {
+    updateStudentSessionUI(user);
+  });
+}
 
 const questions = [
   {
@@ -153,27 +363,20 @@ function typeWriter(element, text, speed = 25, callback) {
 
 async function showQuizOverlay() {
 
-  // Check if user has already completed the pretest (localStorage first, then Firestore)
-  let username = localStorage.getItem('digitech_username');
-  const localScore = localStorage.getItem('digitech_score');
+  await ensureFirebaseReady();
+  const initialIdentity = getStudentIdentity();
+  const forceRetake = forceRetakeMode;
+
+  // Check if user has already completed the pretest using Firestore only.
+  let username = initialIdentity.username;
   
-  // Check localStorage first (covers bypassed pretest and previously submitted scores)
-  if (username && localScore) {
-    document.body.classList.remove('overflow-hidden');
-    const mainApp = document.getElementById('main-app');
-    if (mainApp) mainApp.classList.remove('hidden');
-    return;
-  }
-  
-  // If no localStorage score, check Firestore
-  if (username) {
+  if (!forceRetake && initialIdentity.authenticated) {
     try {
-      const snap = await db.collection('quizResults').where('username', '==', username).limit(1).get();
-      if (!snap.empty) {
-        // Already completed: skip overlay, show site
-        document.body.classList.remove('overflow-hidden');
-        const mainApp = document.getElementById('main-app');
-        if (mainApp) mainApp.classList.remove('hidden');
+      const byUserId = await db.collection('quizResults').where('userId', '==', initialIdentity.userId).limit(1).get();
+      const hasResult = !byUserId.empty;
+      if (hasResult) {
+        // Already completed: skip pretest and continue to main site.
+        revealMainSite();
         return;
       }
     } catch (e) {
@@ -181,6 +384,8 @@ async function showQuizOverlay() {
     }
   }
   // Hide main site
+  const retakeBtn = document.getElementById('retake-link');
+  if (retakeBtn) retakeBtn.style.display = 'none';
   document.body.classList.add('overflow-hidden');
   const mainContent = document.querySelector('.container');
   if (mainContent) mainContent.style.display = 'none';
@@ -211,10 +416,20 @@ async function showQuizOverlay() {
       </div>
       <div id="quiz-username-area" style="margin:2.5rem 0 1.5rem 0;">
         <div style="margin-bottom: 1.5rem;">
-          <span style="color:#00ff41;">alias@digitech:~$</span> <input id="quiz-username" type="text" placeholder="enter your hacker alias" style="width:60%;padding:0.5rem 1rem;font-size:1.1rem;background:#18181b;color:#00ff41;border:1.5px solid #00ff41;border-radius:0.5rem;outline:none;box-shadow:0 0 8px #00ff4155;font-family:'Space Mono',monospace;" maxlength="24" autocomplete="off">
-          <button id="quiz-username-btn" style="margin-left:0.5rem;padding:0.5rem 1.2rem;background:#00ff41;color:#18181b;font-weight:bold;border:none;border-radius:0.5rem;box-shadow:0 0 8px #00ff41;cursor:pointer;font-family:'Space Mono',monospace;">Start</button>
+          <span style="color:#00ff41;">alias@digitech:~$</span> <input id="quiz-username" type="text" placeholder="create username" style="width:60%;padding:0.5rem 1rem;font-size:1.1rem;background:#18181b;color:#00ff41;border:1.5px solid #00ff41;border-radius:0.5rem;outline:none;box-shadow:0 0 8px #00ff4155;font-family:'Space Mono',monospace;" maxlength="24" autocomplete="username">
+          <button id="quiz-username-btn" style="margin-left:0.5rem;padding:0.5rem 1.2rem;background:#00ff41;color:#18181b;font-weight:bold;border:none;border-radius:0.5rem;box-shadow:0 0 8px #00ff41;cursor:pointer;font-family:'Space Mono',monospace;">Start Quiz</button>
           <span class="blinking-cursor" style="color:#00ff41;font-weight:bold;font-size:1.2rem;margin-left:0.2rem;">█</span>
         </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-top:-0.6rem;margin-bottom:1.1rem;">
+          <input id="quiz-password" type="password" placeholder="password (6+ chars)" style="flex:1;min-width:220px;padding:0.45rem 0.8rem;font-size:1rem;background:#18181b;color:#00ff41;border:1.5px solid #00ff41;border-radius:0.5rem;outline:none;box-shadow:0 0 8px #00ff4155;font-family:'Space Mono',monospace;" autocomplete="current-password">
+          <button id="student-create-btn" style="padding:0.45rem 0.85rem;background:#00ff41;color:#18181b;font-weight:bold;border:none;border-radius:0.5rem;box-shadow:0 0 8px #00ff41;cursor:pointer;font-family:'Space Mono',monospace;">Create Account</button>
+          <button id="student-login-btn" style="padding:0.45rem 0.85rem;background:#00441a;color:#00ff41;font-weight:bold;border:1px solid #00ff41;border-radius:0.5rem;box-shadow:0 0 8px #00ff41;cursor:pointer;font-family:'Space Mono',monospace;">Login</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:0.45rem;color:#8de6b3;font-size:0.82rem;margin-top:-0.3rem;margin-bottom:0.8rem;cursor:pointer;">
+          <input id="remember-student-login" type="checkbox" style="accent-color:#00ff41;" ${localStorage.getItem(REMEMBER_PREF_KEY) !== '0' ? 'checked' : ''}>
+          Remember login on this device
+        </label>
+        <div id="student-auth-status" style="margin-top:-0.5rem;margin-bottom:0.9rem;color:#6ee7b7;font-size:0.85rem;">${initialIdentity.authenticated ? 'Signed in. Your work will save to your account.' : 'Create or login to save work under your account.'}</div>
         <div style="border-top: 1px solid #00ff41; padding-top: 1rem; color: #00ff41; font-size: 0.9rem; text-align: center;">
           <div style="margin-bottom: 0.75rem;">Already completed this pretest?</div>
           <button id="skip-if-completed-btn" style="width: 100%; padding:0.5rem 1rem;background:#00441a;color:#00ff41;border:1px solid #00ff41;border-radius:0.5rem;cursor:pointer;font-family:'Space Mono',monospace; font-weight: bold;">Check if Completed</button>
@@ -235,10 +450,97 @@ async function showQuizOverlay() {
       document.getElementById('quiz-username').style.borderColor = 'red';
       return;
     }
-    localStorage.setItem('digitech_username', username);
+    const authUser = firebase.auth().currentUser;
+    if (!authUser || authUser.isAnonymous) {
+      const authStatus = document.getElementById('student-auth-status');
+      if (authStatus) {
+        authStatus.textContent = 'Login required before starting the quiz.';
+        authStatus.style.color = '#f87171';
+      }
+      return;
+    }
+    forceRetakeMode = false;
     document.getElementById('quiz-username-area').style.display = 'none';
     showQuestion(0);
   };
+  const authStatus = document.getElementById('student-auth-status');
+  const passwordInput = document.getElementById('quiz-password');
+  const rememberCheckbox = document.getElementById('remember-student-login');
+  const createBtn = document.getElementById('student-create-btn');
+  const loginBtn = document.getElementById('student-login-btn');
+  const setAuthStatus = (text, color) => {
+    authStatus.textContent = text;
+    authStatus.style.color = color;
+  };
+  const resolveAuthInputs = () => {
+    const enteredUsername = document.getElementById('quiz-username').value.trim();
+    const enteredPassword = passwordInput.value;
+    if (enteredUsername.length < 2) {
+      setAuthStatus('Username must be at least 2 characters.', '#f87171');
+      return null;
+    }
+    if (enteredPassword.length < 6) {
+      setAuthStatus('Password must be at least 6 characters.', '#f87171');
+      return null;
+    }
+    const email = usernameToEmail(enteredUsername);
+    if (!email) {
+      setAuthStatus('Use letters and numbers in username.', '#f87171');
+      return null;
+    }
+    const rememberLogin = !!(rememberCheckbox && rememberCheckbox.checked);
+    return { enteredUsername, enteredPassword, email, rememberLogin };
+  };
+  if (rememberCheckbox) {
+    rememberCheckbox.onchange = () => {
+      localStorage.setItem(REMEMBER_PREF_KEY, rememberCheckbox.checked ? '1' : '0');
+    };
+  }
+  if (createBtn) {
+    createBtn.onclick = async () => {
+      const payload = resolveAuthInputs();
+      if (!payload) return;
+      setAuthStatus('Creating account...', '#ffaa00');
+      try {
+        await configureAuthPersistence(payload.rememberLogin);
+        const credential = await firebase.auth().createUserWithEmailAndPassword(payload.email, payload.enteredPassword);
+        if (credential.user) {
+          await credential.user.updateProfile({ displayName: payload.enteredUsername });
+        }
+        localStorage.setItem(SAVED_USERNAME_KEY, payload.enteredUsername);
+        document.getElementById('quiz-username').value = payload.enteredUsername;
+        setAuthStatus('Account created. Your work will save to this account.', '#00ff41');
+      } catch (error) {
+        if (error && error.code === 'auth/email-already-in-use') {
+          setAuthStatus('Username already exists. Use Login instead.', '#f87171');
+        } else {
+          setAuthStatus(`Auth error: ${error.code || 'unknown'}`, '#f87171');
+        }
+      }
+    };
+  }
+  if (loginBtn) {
+    loginBtn.onclick = async () => {
+      const payload = resolveAuthInputs();
+      if (!payload) return;
+      setAuthStatus('Signing in...', '#ffaa00');
+      try {
+        await configureAuthPersistence(payload.rememberLogin);
+        const credential = await firebase.auth().signInWithEmailAndPassword(payload.email, payload.enteredPassword);
+        if (credential.user && !credential.user.displayName) {
+          await credential.user.updateProfile({ displayName: payload.enteredUsername });
+        }
+        localStorage.setItem(SAVED_USERNAME_KEY, payload.enteredUsername);
+        document.getElementById('quiz-username').value = payload.enteredUsername;
+        setAuthStatus('Login successful. Your work will save to this account.', '#00ff41');
+      } catch (error) {
+        setAuthStatus(`Login failed: ${error.code || 'unknown'}`, '#f87171');
+      }
+    };
+  }
+  if (username) {
+    document.getElementById('quiz-username').value = username;
+  }
   document.getElementById('quiz-username').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') document.getElementById('quiz-username-btn').click();
   });
@@ -250,10 +552,10 @@ async function showQuizOverlay() {
 
   if (skipBtn) {
     skipBtn.onclick = async () => {
-      const username = usernameInput.value.trim();
-      if (username.length < 2) {
+      const authUser = firebase.auth().currentUser;
+      if (!authUser || authUser.isAnonymous) {
         skipStatus.style.color = '#ff4444';
-        skipStatus.textContent = 'Please enter a valid alias first';
+        skipStatus.textContent = 'Login required before completion check.';
         return;
       }
 
@@ -261,36 +563,29 @@ async function showQuizOverlay() {
         skipStatus.textContent = 'Checking...';
         skipStatus.style.color = '#ffaa00';
         
-        // Query Firestore for this username
-        const snap = await db.collection('quizResults').where('username', '==', username).limit(1).get();
+        // Query Firestore for this signed-in user ID.
+        const snap = await db.collection('quizResults').where('userId', '==', authUser.uid).limit(1).get();
         
         if (!snap.empty) {
           // Already completed - show main course
           skipStatus.textContent = '✓ Found! Loading course...';
           skipStatus.style.color = '#00ff41';
-          
-          // Save to localStorage for this session
-          localStorage.setItem('digitech_username', username);
-          localStorage.setItem('digitech_score', '1'); // Mark as completed
-          
+
           setTimeout(() => {
-            // Hide quiz overlay and show main app
-            document.body.classList.remove('overflow-hidden');
-            const mainApp = document.getElementById('main-app');
-            if (mainApp) {
-              mainApp.classList.remove('hidden');
-              mainApp.style.display = '';
-            }
-            overlay.style.display = 'none';
+            revealMainSite();
           }, 500);
         } else {
           // Not found - they need to take the pretest
-          skipStatus.textContent = '✗ No record found. Start the pretest above.';
+          skipStatus.textContent = '✗ No completed test found for this login. Start the pretest above.';
           skipStatus.style.color = '#ff8844';
         }
       } catch (error) {
         console.error('Error checking completion:', error);
-        skipStatus.textContent = '✗ Error checking. Start the pretest above.';
+        if (error && error.code === 'permission-denied') {
+          skipStatus.textContent = '✗ Cannot check completion: Firestore rules blocked read access.';
+        } else {
+          skipStatus.textContent = `✗ Error checking: ${error.code || 'unknown-error'}`;
+        }
         skipStatus.style.color = '#ff4444';
       }
     };
@@ -398,17 +693,26 @@ async function showScore() {
   quizArea.style.display = 'none';
   const scoreArea = document.getElementById('quiz-score-area');
   scoreArea.style.display = '';
+  await ensureFirebaseReady();
   const score = userAnswers.reduce((acc, ans, idx) => acc + (ans === questions[idx].answer ? 1 : 0), 0);
-  const username = localStorage.getItem('digitech_username') || 'Anonymous';
-  const result = { username, score, total: questions.length, date: new Date().toISOString(), answers: userAnswers };
-  localStorage.setItem('digitech_score', JSON.stringify(result));
+  const identity = getStudentIdentity();
+  const username = identity.username;
+  const result = {
+    username,
+    userId: identity.userId,
+    email: identity.email,
+    score,
+    total: questions.length,
+    date: new Date().toISOString(),
+    answers: userAnswers
+  };
   // Save to Firestore
   let saveMsg = '';
   try {
     await db.collection('quizResults').add(result);
     saveMsg = `<span style='color:#00ff41;'>[Saved to database]</span>`;
   } catch (e) {
-    saveMsg = `<span style='color:#f87171;'>[Error saving to database]</span>`;
+    saveMsg = `<span style='color:#f87171;'>${formatDbError(e)}</span>`;
     console.error('Firestore save error:', e);
   }
   // Animated score reveal
@@ -424,17 +728,47 @@ async function showScore() {
   }, 120);
   document.getElementById('reveal-site-btn').onclick = () => {
     // Hide overlay, show site
+    forceRetakeMode = false;
     document.getElementById('quiz-overlay').remove();
-    document.body.classList.remove('overflow-hidden');
-    const mainContent = document.querySelector('.container');
-    if (mainContent) mainContent.style.display = '';
+    revealMainSite();
   };
+}
+
+function addRetakeButton() {
+  if (document.getElementById('retake-link')) return;
+  const btn = document.createElement('button');
+  btn.id = 'retake-link';
+  btn.textContent = 'RETAKE PRETEST';
+  btn.style.position = 'fixed';
+  btn.style.bottom = '6px';
+  btn.style.left = '50%';
+  btn.style.transform = 'translateX(-50%)';
+  btn.style.padding = '0.55rem 1rem';
+  btn.style.background = '#101010';
+  btn.style.color = '#00ff41';
+  btn.style.fontWeight = 'bold';
+  btn.style.border = '1.5px solid #00ff41';
+  btn.style.borderRadius = '0.5rem';
+  btn.style.boxShadow = '0 0 8px #00ff41';
+  btn.style.cursor = 'pointer';
+  btn.style.fontFamily = 'monospace';
+  btn.style.zIndex = '99998';
+  btn.onclick = () => {
+    forceRetakeMode = true;
+    showQuizOverlay();
+  };
+  document.body.appendChild(btn);
 }
 
 // --- Admin Google Sign-In Restriction ---
 const ADMIN_EMAIL = "pb@hurunuicollege.school.nz"; // CHANGE THIS TO YOUR GOOGLE EMAIL
 
 document.addEventListener('DOMContentLoaded', () => {
+  firebase.auth().getRedirectResult().catch((err) => {
+    console.error('Admin redirect sign-in result error:', err);
+  });
+  setupStudentLogoutUI();
+  addRetakeButton();
   showQuizOverlay();
 
   // Admin Modal Logic
@@ -445,13 +779,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (adminLink && adminModal && closeAdminModal && adminModalContent) {
     adminLink.onclick = async () => {
+      if (adminAuthUnsubscribe) {
+        adminAuthUnsubscribe();
+        adminAuthUnsubscribe = null;
+      }
       adminModal.classList.remove('hidden');
       adminModalContent.innerHTML = `<div style="color:#00ff41;font-family:monospace;text-shadow:0 0 8px #00ff41;letter-spacing:1px;">
         <span class="blinking-cursor" style="font-weight:bold;font-size:1.2rem;">█</span> AUTHENTICATING...<br><span style="font-size:0.9em;color:#6ee7b7;">(Google Admin Terminal)</span>
       </div>
       <style>.blinking-cursor{animation:blink 1s steps(1) infinite;}@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}</style>`;
-      firebase.auth().onAuthStateChanged(async user => {
-        if (!user) {
+      adminAuthUnsubscribe = firebase.auth().onAuthStateChanged(async user => {
+        if (!user || user.isAnonymous) {
           // Not signed in: show Google Sign-In button
           adminModalContent.innerHTML = `
             <div style="color:#00ff41;font-family:monospace;text-shadow:0 0 8px #00ff41;letter-spacing:1px;">
@@ -460,18 +798,73 @@ document.addEventListener('DOMContentLoaded', () => {
               <button id="admin-google-signin" style="padding:0.7rem 2rem;background:#101010;color:#00ff41;font-weight:bold;border:1.5px solid #00ff41;border-radius:0.5rem;box-shadow:0 0 8px #00ff41;cursor:pointer;font-size:1.1rem;font-family:monospace;display:flex;align-items:center;gap:0.7em;">
                 <img src='https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg' style='height:1.2em;vertical-align:middle;'> <span>Sign in with Google</span>
               </button>
+              <button id="admin-google-redirect" style="margin-top:0.7rem;padding:0.55rem 1.2rem;background:#003b1a;color:#00ff41;font-weight:bold;border:1px solid #00ff41;border-radius:0.5rem;box-shadow:0 0 8px #00ff41;cursor:pointer;font-size:0.95rem;font-family:monospace;display:none;">
+                Use Redirect Sign-in
+              </button>
+              <button id="admin-google-popup" style="margin-top:0.7rem;padding:0.55rem 1.2rem;background:#101010;color:#00ff41;font-weight:bold;border:1px solid #00ff41;border-radius:0.5rem;box-shadow:0 0 8px #00ff41;cursor:pointer;font-size:0.95rem;font-family:monospace;display:none;">
+                Try Popup Sign-in Instead
+              </button>
               <div id="admin-login-error" style="color:#f87171;margin-top:1em;"></div>
             </div>
             <style>.blinking-cursor{animation:blink 1s steps(1) infinite;}@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}</style>
           `;
+          const provider = new firebase.auth.GoogleAuthProvider();
+          const redirectBtn = document.getElementById('admin-google-redirect');
+          const popupBtn = document.getElementById('admin-google-popup');
+          if (redirectBtn) {
+            redirectBtn.onclick = async () => {
+              try {
+                await firebase.auth().signInWithRedirect(provider);
+              } catch (err) {
+                const errorEl = document.getElementById('admin-login-error');
+                if (errorEl) errorEl.textContent = formatAdminAuthError(err);
+              }
+            };
+          }
+          // Codespaces and school devices are often popup-restricted; use redirect by default.
           document.getElementById('admin-google-signin').onclick = async () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
             try {
-              await firebase.auth().signInWithPopup(provider);
+              await firebase.auth().signInWithRedirect(provider);
             } catch (err) {
-              document.getElementById('admin-login-error').textContent = err.message;
+              const errorEl = document.getElementById('admin-login-error');
+              if (errorEl) errorEl.textContent = formatAdminAuthError(err);
             }
           };
+
+          if (popupBtn) {
+            popupBtn.style.display = 'inline-block';
+          }
+
+          if (popupBtn) {
+            popupBtn.onclick = async () => {
+            if (adminPopupInProgress) return;
+            const signInBtn = document.getElementById('admin-google-signin');
+            try {
+              adminPopupInProgress = true;
+              if (signInBtn) signInBtn.disabled = true;
+              popupBtn.disabled = true;
+              await firebase.auth().signInWithPopup(provider);
+            } catch (err) {
+              const errorEl = document.getElementById('admin-login-error');
+              if (errorEl) {
+                errorEl.textContent = formatAdminAuthError(err);
+              }
+              if (err && (
+                err.code === 'auth/popup-blocked' ||
+                err.code === 'auth/cancelled-popup-request' ||
+                err.code === 'auth/popup-closed-by-user'
+              )) {
+                if (redirectBtn) {
+                  redirectBtn.style.display = 'inline-block';
+                }
+              }
+            } finally {
+              adminPopupInProgress = false;
+              if (signInBtn) signInBtn.disabled = false;
+              popupBtn.disabled = false;
+            }
+            };
+          }
         } else if (user.email !== ADMIN_EMAIL) {
           // Signed in, but not admin
           adminModalContent.innerHTML = `<div style='color:#f87171;font-family:monospace;text-shadow:0 0 8px #00ff41;'><span class="blinking-cursor" style="font-weight:bold;font-size:1.2rem;">█</span> ACCESS DENIED<br><span style='color:#6ee7b7;'>Signed in as <b>${escapeHTML(user.email)}</b>.<br>Only the admin may view results.</span><br><button id='admin-logout' style='margin-top:1.5em;padding:0.5em 1.5em;background:#101010;color:#00ff41;font-weight:bold;border:1.5px solid #00ff41;border-radius:0.5rem;box-shadow:0 0 8px #00ff41;cursor:pointer;font-family:monospace;'>Logout</button></div><style>.blinking-cursor{animation:blink 1s steps(1) infinite;}@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}</style>`;
@@ -504,7 +897,7 @@ document.addEventListener('DOMContentLoaded', () => {
               resultsDiv.innerHTML = `<div style='margin-bottom:2em;'><div style='color:#00ff41;font-weight:bold;margin-bottom:0.5em;'>Quiz Results</div>${quizHtml}</div>`;
             }
           } catch (e) {
-            resultsDiv.innerHTML = `<div style='color:#f87171;'>Error loading quiz results.<br>${e.message}</div>`;
+            resultsDiv.innerHTML = `<div style='color:#f87171;'>Error loading quiz results.<br>${formatAdminResultsError(e)}</div>`;
           }
           // Project Submissions
           let subHtml = `<div style='color:#00ff41;font-weight:bold;margin:2em 0 0.5em 0;'>Project Submissions</div>`;
@@ -528,17 +921,27 @@ document.addEventListener('DOMContentLoaded', () => {
               resultsDiv.innerHTML += table;
             }
           } catch (e) {
-            resultsDiv.innerHTML += `<div style='color:#f87171;'>Error loading submissions.<br>${e.message}</div>`;
+            resultsDiv.innerHTML += `<div style='color:#f87171;'>Error loading submissions.<br>${formatAdminResultsError(e)}</div>`;
           }
         }
       });
     };
     closeAdminModal.onclick = () => {
+      if (adminAuthUnsubscribe) {
+        adminAuthUnsubscribe();
+        adminAuthUnsubscribe = null;
+      }
       adminModal.classList.add('hidden');
     };
     // Optional: close modal on background click
-    adminModal.onclick = e => {
-      if (e.target === adminModal) adminModal.classList.add('hidden');
+    adminModal.onclick = (e) => {
+      if (e.target === adminModal) {
+        if (adminAuthUnsubscribe) {
+          adminAuthUnsubscribe();
+          adminAuthUnsubscribe = null;
+        }
+        adminModal.classList.add('hidden');
+      }
     };
   }
 
@@ -613,18 +1016,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (bypassBtn) {
       bypassBtn.onclick = async () => {
         try {
-          // Generate a teacher alias
-          const teacherAlias = 'teacher_' + Math.random().toString(36).substr(2, 9);
-          localStorage.setItem('digitech_username', teacherAlias);
-          localStorage.setItem('digitech_score', '0');
-          
-          bypassMessage.textContent = '✓ Pretest bypassed. Reloading...';
+          // Teacher bypass is in-memory only for this open page/session.
+          forceRetakeMode = false;
+
+          bypassMessage.textContent = '✓ Pretest bypassed for this session.';
           bypassMessage.style.color = '#4ade80';
-          
-          // Reload page so completion check runs with new localStorage values
-          setTimeout(() => {
-            location.reload();
-          }, 500);
+
+          revealMainSite();
         } catch (error) {
           console.error('Error bypassing pretest:', error);
           bypassMessage.textContent = 'Error: Could not bypass pretest.';
